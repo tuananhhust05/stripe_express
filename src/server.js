@@ -35,7 +35,7 @@ app.use('/', webRoutes);
 app.use('/api', apiRoutes);
 app.use('/admin', adminRoutes);
 
-const PORT = process.env.PORT || 3333;
+const PORT = process.env.PORT || 3334;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/shadow_link';
 
 mongoose

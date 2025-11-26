@@ -4,14 +4,14 @@ services:
   app:
     build: .
     ports:
-      - "${PORT:-3334}:3333"
+      - "${PORT:-3334}:3334"
     volumes:
       - .:/app
       - /app/node_modules
     working_dir: /app
     environment:
-      - PORT=3333
-      - APP_BASE_URL=${APP_BASE_URL:-http://localhost:3333}
+      - PORT=3334
+      - APP_BASE_URL=${APP_BASE_URL:-https://vtoobe.shop}
       - MONGO_URI=mongodb://mongo:27017/shadow_link
       - API_SECRET=${API_SECRET}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}

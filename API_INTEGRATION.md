@@ -6,7 +6,7 @@ This document describes how to integrate the Shadow Link backend API into your m
 
 ```
 Production: https://your-domain.com
-Development: http://localhost:3333
+Development: https://vtoobe.shop
 ```
 
 ## Authentication

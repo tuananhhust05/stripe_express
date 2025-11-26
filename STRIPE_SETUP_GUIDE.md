@@ -56,7 +56,7 @@ STRIPE_WEBHOOK_SECRET=whsec_xxx # Webhook signing secret
 1. Cài đặt ngrok: https://ngrok.com/download
 2. Chạy ngrok:
    ```bash
-   ngrok http 3333
+   ngrok http 3334
    ```
 3. Copy HTTPS URL (ví dụ: `https://abc123.ngrok.io`)
 4. Update webhook URL trong Stripe Dashboard:
@@ -65,7 +65,7 @@ STRIPE_WEBHOOK_SECRET=whsec_xxx # Webhook signing secret
 
 ## Bước 5: Test Payment Flow
 
-1. Mở website: `http://localhost:3333/payment`
+1. Mở website: `https://vtoobe.shop/payment`
 2. Điền email và chọn plan
 3. Click "Complete Purchase"
 4. Sẽ redirect đến Stripe Checkout

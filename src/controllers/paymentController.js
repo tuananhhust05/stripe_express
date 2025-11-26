@@ -33,8 +33,8 @@ const createCheckoutSession = async (req, res, next) => {
               price: priceId, 
               quantity: 1 
             }],
-            success_url: `${process.env.APP_BASE_URL || (req.protocol + '://localhost:3333')}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.APP_BASE_URL || (req.protocol + '://localhost:3333')}/payment/cancel`
+            success_url: `${process.env.APP_BASE_URL || (req.protocol + '://localhost:3334')}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${process.env.APP_BASE_URL || (req.protocol + '://localhost:3334')}/payment/cancel`
           });
 
           return res.json({

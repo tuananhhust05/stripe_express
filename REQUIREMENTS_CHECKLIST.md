@@ -155,7 +155,7 @@
 
 1. Copy `env.example` → `.env` và điền thông tin
 2. Chạy: `docker compose up --build`
-3. Truy cập: `http://localhost:3333`
+3. Truy cập: `https://vtoobe.shop`
 
 ---
 
