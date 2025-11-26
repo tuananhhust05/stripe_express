@@ -4,7 +4,7 @@ services:
   app:
     build: .
     ports:
-      - "${PORT:-3333}:3333"
+      - "${PORT:-3334}:3333"
     volumes:
       - .:/app
       - /app/node_modules
