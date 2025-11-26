@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Activations - Shadow Link Admin</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="stylesheet" href="/css/styles.css" />
+    <style>
+      .admin-layout {
+        display: flex;
+        min-height: 100vh;
+        background: var(--bg-alt);
+      }
+
+      .admin-sidebar {
+        width: 260px;
+        background: var(--bg-card);
+        border-right: 1px solid var(--border-light);
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        z-index: 100;
+      }
+
+      .admin-sidebar__header {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-light);
+      }
+
+      .admin-sidebar__logo {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .admin-sidebar__logo svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      .admin-sidebar__nav {
+        flex: 1;
+        padding: 1rem 0;
+      }
+
+      .admin-sidebar__item {
+        display: block;
+        padding: 0.75rem 1.5rem;
+        color: var(--muted);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.95rem;
+      }
+
+      .admin-sidebar__item:hover {
+        background: var(--bg-alt);
+        color: var(--text);
+      }
+
+      .admin-sidebar__item.active {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border-right: 3px solid var(--accent);
+        font-weight: 500;
+      }
+
+      .admin-sidebar__item svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .admin-sidebar__footer {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--border-light);
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+
+      .admin-main {
+        flex: 1;
+        margin-left: 260px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .admin-header {
+        background: var(--bg-card);
+        border-bottom: 1px solid var(--border-light);
+        padding: 1rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      }
+
+      .admin-header__title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .admin-header__actions {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .admin-header__user {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        background: var(--bg-alt);
+      }
+
+      .admin-header__user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+
+      .admin-header__user-info {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .admin-header__user-name {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--text);
+      }
+
+      .admin-header__user-role {
+        font-size: 0.75rem;
+        color: var(--muted);
+      }
+
+      .admin-content {
+        flex: 1;
+        padding: 2rem;
+        overflow-y: auto;
+      }
+
+      .admin-search-bar {
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .admin-search-input {
+        flex: 1;
+        min-width: 200px;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg);
+        color: var(--text);
+        font-size: 0.95rem;
+      }
+
+      .admin-filter-select {
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg);
+        color: var(--text);
+        font-size: 0.95rem;
+        cursor: pointer;
+      }
+
+      @media (max-width: 768px) {
+        .admin-sidebar {
+          transform: translateX(-100%);
+          transition: transform 0.3s ease;
+        }
+
+        .admin-sidebar.open {
+          transform: translateX(0);
+        }
+
+        .admin-main {
+          margin-left: 0;
+        }
+      }
+    </style>
+  </head>
+  <body class="admin">
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <aside class="admin-sidebar">
+        <div class="admin-sidebar__header">
+          <a href="/admin" class="admin-sidebar__logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+            Shadow Link
+          </a>
+        </div>
+
+        <nav class="admin-sidebar__nav">
+          <a href="/admin" class="admin-sidebar__item" data-page="dashboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"/>
+              <rect x="14" y="3" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            Dashboard
+          </a>
+          <a href="/admin/transactions" class="admin-sidebar__item" data-page="transactions">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="1" x2="12" y2="23"/>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+            Transactions
+          </a>
+          <a href="/admin/activations" class="admin-sidebar__item active" data-page="activations">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="8.5" cy="7" r="4"/>
+              <path d="M20 8v6M23 11h-6"/>
+            </svg>
+            Activations
+          </a>
+          <a href="/" class="admin-sidebar__item" target="_blank">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            View Site
+          </a>
+        </nav>
+
+        <div class="admin-sidebar__footer">
+          <p style="margin: 0;">Admin Panel v1.0</p>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <!-- Header -->
+        <header class="admin-header">
+          <h1 class="admin-header__title">Activations</h1>
+          <div class="admin-header__actions">
+            <div class="admin-header__user">
+              <div class="admin-header__user-avatar">A</div>
+              <div class="admin-header__user-info">
+                <span class="admin-header__user-name">Admin</span>
+                <span class="admin-header__user-role">Administrator</span>
+              </div>
+            </div>
+            <button id="logout-btn" class="btn ghost" style="padding: 0.5rem 1rem;">
+              Logout
+            </button>
+          </div>
+        </header>
+
+        <!-- Content -->
+        <div class="admin-content">
+          <!-- Search and Filter -->
+          <div class="admin-search-bar">
+            <input 
+              type="text" 
+              id="search-input" 
+              class="admin-search-input" 
+              placeholder="Search by email, activation code, plan..."
+            />
+            <select id="status-filter" class="admin-filter-select">
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="expired">Expired</option>
+              <option value="revoked">Revoked</option>
+            </select>
+            <select id="plan-filter" class="admin-filter-select">
+              <option value="">All Plans</option>
+              <option value="monthly">Monthly</option>
+              <option value="lifetime">Lifetime</option>
+            </select>
+            <button id="search-btn" class="btn primary" style="padding: 0.75rem 1.5rem;">
+              Search
+            </button>
+            <button id="clear-btn" class="btn ghost" style="padding: 0.75rem 1.5rem;">
+              Clear
+            </button>
+          </div>
+
+          <!-- Results count -->
+          <div style="margin-bottom: 1rem; color: var(--muted); font-size: 0.9rem;">
+            Showing <span id="results-count">0</span> activations
+          </div>
+
+          <!-- Table -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: var(--bg-alt); border-bottom: 1px solid var(--border-light);">
+                  <th style="padding: 1rem; text-align: left; color: var(--text); font-weight: 600; font-size: 0.9rem;">Activation Code</th>
+                  <th style="padding: 1rem; text-align: left; color: var(--text); font-weight: 600; font-size: 0.9rem;">Email</th>
+                  <th style="padding: 1rem; text-align: left; color: var(--text); font-weight: 600; font-size: 0.9rem;">Plan</th>
+                  <th style="padding: 1rem; text-align: left; color: var(--text); font-weight: 600; font-size: 0.9rem;">Status</th>
+                  <th style="padding: 1rem; text-align: left; color: var(--text); font-weight: 600; font-size: 0.9rem;">Expires</th>
+                  <th style="padding: 1rem; text-align: left; color: var(--text); font-weight: 600; font-size: 0.9rem;">Created</th>
+                </tr>
+              </thead>
+              <tbody id="activations-tbody">
+                <tr>
+                  <td colspan="6" style="padding: 2rem; text-align: center; color: var(--muted);">Loading...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      // Set active menu item
+      const currentPath = window.location.pathname;
+      const menuItems = document.querySelectorAll('.admin-sidebar__item[data-page]');
+      menuItems.forEach(item => {
+        const page = item.getAttribute('data-page');
+        if (currentPath.includes(page)) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+
+      // Logout handler
+      document.getElementById('logout-btn').addEventListener('click', async () => {
+        try {
+          const response = await fetch('/api/admin/logout', { method: 'POST' });
+          const result = await response.json();
+          if (result.success) {
+            window.location.href = result.redirect || '/admin/login';
+          }
+        } catch (error) {
+          console.error('Logout error:', error);
+          window.location.href = '/admin/login';
+        }
+      });
+
+      // Load activations
+      async function loadActivations(search = '', status = '', plan = '') {
+        try {
+          const params = new URLSearchParams();
+          if (search) params.append('search', search);
+          if (status) params.append('status', status);
+          if (plan) params.append('plan', plan);
+          params.append('limit', '100');
+
+          const response = await fetch(`/api/admin/activations?${params.toString()}`);
+          if (!response.ok) {
+            if (response.status === 401) {
+              window.location.href = '/admin/login';
+              return;
+            }
+            throw new Error('Failed to load activations');
+          }
+
+          const result = await response.json();
+          if (result.success) {
+            const tbody = document.getElementById('activations-tbody');
+            document.getElementById('results-count').textContent = result.total || result.data.length;
+
+            if (result.data.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="6" style="padding: 2rem; text-align: center; color: var(--muted);">No activations found</td></tr>';
+            } else {
+              tbody.innerHTML = result.data.map(a => {
+                const actualStatus = a.actualStatus || a.status;
+                return `
+                <tr style="border-bottom: 1px solid var(--border-light);">
+                  <td style="padding: 1rem; color: var(--text); font-family: monospace; font-size: 0.9rem; font-weight: 600;">${a.activationCode}</td>
+                  <td style="padding: 1rem; color: var(--text);">${a.email || 'N/A'}</td>
+                  <td style="padding: 1rem; color: var(--text);">${a.plan || 'N/A'}</td>
+                  <td style="padding: 1rem;">
+                    <span style="padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.85rem; background: ${actualStatus === 'active' ? 'var(--green)' : '#ff3b30'}; color: white;">
+                      ${actualStatus || 'inactive'}
+                    </span>
+                  </td>
+                  <td style="padding: 1rem; color: var(--muted); font-size: 0.9rem;">
+                    ${a.expiresAt ? new Date(a.expiresAt).toLocaleDateString() : 'Never'}
+                  </td>
+                  <td style="padding: 1rem; color: var(--muted); font-size: 0.9rem;">
+                    ${new Date(a.createdAt).toLocaleString()}
+                  </td>
+                </tr>
+              `;
+              }).join('');
+            }
+          }
+        } catch (error) {
+          console.error('Error loading activations:', error);
+          document.getElementById('activations-tbody').innerHTML = 
+            '<tr><td colspan="6" style="padding: 2rem; text-align: center; color: #ff3b30;">Error loading activations</td></tr>';
+        }
+      }
+
+      // Search handlers
+      document.getElementById('search-btn').addEventListener('click', () => {
+        const search = document.getElementById('search-input').value.trim();
+        const status = document.getElementById('status-filter').value;
+        const plan = document.getElementById('plan-filter').value;
+        loadActivations(search, status, plan);
+      });
+
+      document.getElementById('clear-btn').addEventListener('click', () => {
+        document.getElementById('search-input').value = '';
+        document.getElementById('status-filter').value = '';
+        document.getElementById('plan-filter').value = '';
+        loadActivations();
+      });
+
+      // Enter key to search
+      document.getElementById('search-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          document.getElementById('search-btn').click();
+        }
+      });
+
+      // Load on page load
+      loadActivations();
+    </script>
+  </body>
+</html>

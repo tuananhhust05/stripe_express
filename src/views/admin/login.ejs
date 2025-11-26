@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include('../partials/head', { title }) %>
+  <body class="admin-login">
+    <main style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; background: var(--bg-alt);">
+      <div style="width: 100%; max-width: 400px; background: var(--bg-card); border-radius: 20px; padding: 2.5rem; box-shadow: 0 8px 32px var(--shadow-lg); border: 1px solid var(--border-light);">
+        <h1 style="margin: 0 0 0.5rem 0; color: var(--text); font-size: 1.75rem; font-weight: 600;">Admin Login</h1>
+        <p style="margin: 0 0 2rem 0; color: var(--muted); font-size: 0.9rem;">Shadow Link Administration</p>
+        
+        <div id="error-message" style="display: none; background: #ff3b30; color: white; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.9rem;"></div>
+
+        <form id="login-form">
+          <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; color: var(--text); font-weight: 500; font-size: 0.9rem;">Username</label>
+            <input 
+              type="text" 
+              id="username"
+              name="username" 
+              required 
+              autofocus
+              style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 1rem; box-sizing: border-box;"
+              placeholder="admin"
+            />
+          </div>
+
+          <div style="margin-bottom: 2rem;">
+            <label style="display: block; margin-bottom: 0.5rem; color: var(--text); font-weight: 500; font-size: 0.9rem;">Password</label>
+            <input 
+              type="password" 
+              id="password"
+              name="password" 
+              required
+              style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 1rem; box-sizing: border-box;"
+              placeholder="Enter password"
+            />
+          </div>
+
+          <button 
+            type="submit" 
+            id="submit-btn"
+            class="btn primary full"
+            style="width: 100%; padding: 0.75rem 1.75rem;"
+          >
+            Sign In
+          </button>
+        </form>
+
+        <script>
+          const form = document.getElementById('login-form');
+          const errorDiv = document.getElementById('error-message');
+          const submitBtn = document.getElementById('submit-btn');
+
+          form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Signing in...';
+            errorDiv.style.display = 'none';
+
+            try {
+              const response = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+              });
+
+              const result = await response.json();
+
+              if (result.success) {
+                window.location.href = result.redirect || '/admin';
+              } else {
+                errorDiv.textContent = result.error || 'Login failed';
+                errorDiv.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Sign In';
+              }
+            } catch (error) {
+              errorDiv.textContent = 'Network error. Please try again.';
+              errorDiv.style.display = 'block';
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Sign In';
+            }
+          });
+        </script>
+
+        <p style="margin-top: 2rem; text-align: center; color: var(--muted); font-size: 0.85rem;">
+          <a href="/" style="color: var(--accent); text-decoration: none;">← Back to site</a>
+        </p>
+      </div>
+    </main>
+  </body>
+</html>
+

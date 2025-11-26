@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include('partials/head', { title }) %>
+  <body class="payment">
+    <header class="nav">
+      <a class="brand" href="/">Shadow Link</a>
+      <a class="btn ghost" href="/">Back to landing</a>
+    </header>
+
+    <main class="payment-container">
+      <section class="checkout-card">
+        <p class="eyebrow">Secure checkout</p>
+        <h1>Unlock Shadow Link</h1>
+        <p id="checkout-description">Pick a license, enter your email, and finalize your purchase. We'll email the activation code instantly.</p>
+
+        <form id="checkout-form">
+          <label class="field">
+            <span>Email address</span>
+            <input type="email" id="email" name="email" placeholder="you@icloud.com" required />
+            <div id="email-status" style="margin-top: 0.5rem; font-size: 0.9rem; display: none;"></div>
+          </label>
+
+          <div class="field">
+            <span>Choose your plan</span>
+            <div class="plan-select">
+              <% Object.values(plans).forEach((plan, idx) => { %>
+                <label class="plan-option">
+                  <input type="radio" name="planId" value="<%= plan.id %>" <%= idx === 0 ? 'checked' : '' %> />
+                  <div>
+                    <p class="plan-label"><%= plan.label %></p>
+                    <p class="plan-desc"><%= plan.description %></p>
+                  </div>
+                </label>
+              <% }) %>
+            </div>
+          </div>
+
+          <button class="btn primary full" type="submit" id="submit-btn">Complete Purchase</button>
+          <p id="status" class="status"></p>
+        </form>
+      </section>
+    </main>
+
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+      const form = document.getElementById('checkout-form');
+      const status = document.getElementById('status');
+      const submitBtn = document.getElementById('submit-btn');
+      const emailInput = document.getElementById('email');
+      const emailStatus = document.getElementById('email-status');
+      let emailCheckTimeout = null;
+      let stripe = null;
+      
+      // Initialize Stripe if publishable key is available
+      <% if (stripePublishableKey) { %>
+        stripe = Stripe('<%= stripePublishableKey %>');
+      <% } %>
+
+      // Check activation status when email changes
+      emailInput.addEventListener('input', async (e) => {
+        const email = e.target.value.trim();
+        
+        // Clear previous timeout
+        if (emailCheckTimeout) {
+          clearTimeout(emailCheckTimeout);
+        }
+
+        // Hide status if email is empty
+        if (!email || !email.includes('@')) {
+          emailStatus.style.display = 'none';
+          return;
+        }
+
+        // Debounce: wait 500ms after user stops typing
+        emailCheckTimeout = setTimeout(async () => {
+          try {
+            const response = await fetch(`/api/check-activation/${encodeURIComponent(email)}`);
+            const result = await response.json();
+            
+            if (result.hasActive) {
+              emailStatus.style.display = 'block';
+              emailStatus.style.color = '#ff9500';
+              emailStatus.style.background = 'rgba(255, 149, 0, 0.1)';
+              emailStatus.style.padding = '0.75rem 1rem';
+              emailStatus.style.borderRadius = '8px';
+              emailStatus.style.border = '1px solid rgba(255, 149, 0, 0.3)';
+              emailStatus.innerHTML = result.message + '<br><small style="color: var(--muted); font-size: 0.85rem;">You can still purchase a new license if needed.</small>';
+            } else {
+              emailStatus.style.display = 'none';
+            }
+          } catch (error) {
+            // Silently fail - don't show error for check
+            emailStatus.style.display = 'none';
+          }
+        }, 500);
+      });
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        submitBtn.disabled = true;
+        status.textContent = 'Processing your order...';
+        status.classList.remove('error', 'success');
+
+        const data = {
+          email: form.email.value,
+          planId: form.planId.value
+        };
+
+        try {
+          const response = await fetch('/api/checkout-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Unable to process order');
+          }
+
+          const result = await response.json();
+
+          if (result.success) {
+            // If Stripe sessionId is returned, redirect to Stripe Checkout
+            if (result.sessionId && stripe) {
+              const { error } = await stripe.redirectToCheckout({ 
+                sessionId: result.sessionId 
+              });
+              
+              if (error) {
+                throw new Error(error.message || 'Failed to redirect to checkout');
+              }
+            } 
+            // If manual mode (no Stripe)
+            else if (result.activationCode) {
+              status.textContent = `✅ Success! Activation code sent to ${data.email}. Check your email!`;
+              status.classList.add('success');
+              form.reset();
+              submitBtn.disabled = false;
+            } else {
+              throw new Error('Unexpected response from server');
+            }
+          } else {
+            throw new Error('Unexpected response from server');
+          }
+        } catch (err) {
+          status.textContent = err.message;
+          status.classList.add('error');
+          submitBtn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
+

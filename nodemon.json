@@ -1,0 +1,26 @@
+{
+  "watch": [
+    "src",
+    "public"
+  ],
+  "ext": "js,json,ejs,css,html,svg",
+  "ignore": [
+    "node_modules/**",
+    "*.log",
+    ".git/**",
+    ".env",
+    "dist/**",
+    "build/**"
+  ],
+  "exec": "node src/server.js",
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "delay": 500,
+  "verbose": true,
+  "legacyWatch": true,
+  "polling": true,
+  "restartable": "rs",
+  "signal": "SIGTERM"
+}
+

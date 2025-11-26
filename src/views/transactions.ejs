@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include('partials/head', { title }) %>
+  <body class="transactions">
+    <header class="nav">
+      <a class="brand" href="/">Shadow Link</a>
+      <div class="nav-actions">
+        <a class="btn ghost" href="/payment">New payment</a>
+        <a class="btn ghost" href="/">Landing</a>
+      </div>
+    </header>
+
+    <main class="transactions-container">
+      <section class="transactions-card">
+        <div class="section-header">
+          <p class="eyebrow">Transaction history</p>
+          <h1>Latest checkouts</h1>
+          <p>Stripe data synced via webhook. Keep this tab internal.</p>
+        </div>
+
+        <% if (transactions.length === 0) { %>
+          <p class="empty">No transactions yet.</p>
+        <% } else { %>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Email</th>
+                  <th>Plan</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Activation Code</th>
+                  <th>Stripe Session</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% transactions.forEach((txn) => { %>
+                  <tr>
+                    <td><%= new Date(txn.createdAt).toLocaleString() %></td>
+                    <td><%= txn.email || '—' %></td>
+                    <td><%= txn.plan || '—' %></td>
+                    <td>
+                      <% if (txn.amountTotal && txn.currency) { %>
+                        <%= (txn.amountTotal / 100).toFixed(2) %> <%= txn.currency.toUpperCase() %>
+                      <% } else { %>
+                        —
+                      <% } %>
+                    </td>
+                    <td class="status-pill <%= txn.status %>">
+                      <%= txn.status %>
+                    </td>
+                    <td><%= txn.activationCode || '—' %></td>
+                    <td class="mono"><%= txn.stripeSessionId %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </section>
+    </main>
+  </body>
+</html>
+

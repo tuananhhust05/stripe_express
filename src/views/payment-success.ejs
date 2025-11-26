@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include('partials/head', { title }) %>
+  <body class="status-page success">
+    <main>
+      <div class="status-card">
+        <p class="eyebrow green">Payment confirmed</p>
+        <h1>Activation code on its way.</h1>
+        <p id="status-message">Check your inbox (and spam) for the Shadow Link activation email. Paste the code inside the macOS app to unlock access.</p>
+        
+        <% if (sessionData && sessionData.email) { %>
+          <p style="margin-top: 1rem; color: var(--muted); font-size: 0.9rem;">
+            Email: <strong><%= sessionData.email %></strong>
+          </p>
+        <% } %>
+        
+        <% if (activationCode) { %>
+          <!-- Activation code ready immediately -->
+          <div style="margin: 1.5rem 0; padding: 1.5rem; background: var(--bg-alt); border-radius: 12px; border: 1px solid var(--border);">
+            <p style="margin: 0 0 0.5rem 0; color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Your Activation Code</p>
+            <p style="margin: 0; color: var(--text); font-size: 1.5rem; font-weight: 700; font-family: 'Monaco', 'Menlo', 'Courier New', monospace; letter-spacing: 0.1em;"><%= activationCode %></p>
+            <p style="margin: 0.5rem 0 0 0; color: var(--muted); font-size: 0.85rem;">Check your email for full details</p>
+          </div>
+        <% } else if (sessionData && sessionData.email) { %>
+          <!-- Fallback: check activation status if not created yet -->
+          <div id="checking-status" style="display: block; margin: 1.5rem 0; padding: 1rem; background: var(--bg-alt); border-radius: 8px; color: var(--muted);">
+            <p style="margin: 0;">Checking activation status...</p>
+          </div>
+          
+          <div id="activation-info" style="display: none; margin: 1.5rem 0; padding: 1.5rem; background: var(--bg-alt); border-radius: 12px; border: 1px solid var(--border);">
+            <p style="margin: 0 0 0.5rem 0; color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Activation Code</p>
+            <p id="activation-code" style="margin: 0; color: var(--text); font-size: 1.5rem; font-weight: 700; font-family: 'Monaco', 'Menlo', 'Courier New', monospace; letter-spacing: 0.1em;"></p>
+            <p style="margin: 0.5rem 0 0 0; color: var(--muted); font-size: 0.85rem;">Check your email for full details</p>
+          </div>
+        <% } %>
+        
+        <a class="btn primary" href="/" style="margin-top: 1.5rem;">Return home</a>
+      </div>
+    </main>
+    
+    <% if (sessionData && sessionData.id) { %>
+    <script>
+      // Check activation status if session_id is available
+      const sessionId = '<%= sessionData.id %>';
+      const email = '<%= sessionData.email || "" %>';
+      
+      if (email) {
+        // Show checking status
+        document.getElementById('checking-status').style.display = 'block';
+        
+        // Poll for activation (webhook might take a few seconds)
+        let attempts = 0;
+        const maxAttempts = 10;
+        const checkInterval = setInterval(async () => {
+          attempts++;
+          
+          try {
+            const response = await fetch(`/api/check-activation/${encodeURIComponent(email)}`);
+            const result = await response.json();
+            
+            if (result.hasActive && result.activationCode) {
+              // Activation found!
+              clearInterval(checkInterval);
+              document.getElementById('checking-status').style.display = 'none';
+              document.getElementById('activation-info').style.display = 'block';
+              document.getElementById('activation-code').textContent = result.activationCode;
+              document.getElementById('status-message').textContent = '✅ Your activation code is ready!';
+            } else if (attempts >= maxAttempts) {
+              // Stop checking after max attempts
+              clearInterval(checkInterval);
+              document.getElementById('checking-status').style.display = 'none';
+              document.getElementById('status-message').textContent = 'Your activation code will be sent to your email shortly. Please check your inbox (and spam folder).';
+            }
+          } catch (error) {
+            console.error('Error checking activation:', error);
+            if (attempts >= maxAttempts) {
+              clearInterval(checkInterval);
+              document.getElementById('checking-status').style.display = 'none';
+            }
+          }
+        }, 2000); // Check every 2 seconds
+        
+        // Stop after 20 seconds max
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          document.getElementById('checking-status').style.display = 'none';
+        }, 20000);
+      }
+    </script>
+    <% } %>
+  </body>
+</html>
+
