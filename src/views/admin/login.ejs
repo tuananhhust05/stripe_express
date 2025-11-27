@@ -2,6 +2,62 @@
 <html lang="en">
   <%- include('../partials/head', { title }) %>
   <body class="admin-login">
+    <style>
+      .light-motion {
+        position: fixed;
+        inset: auto auto auto auto;
+        width: 420px;
+        height: 420px;
+        border-radius: 50%;
+        filter: blur(60px);
+        opacity: 0.45;
+        background: radial-gradient(circle at 30% 30%, var(--accent) 0%, transparent 65%);
+        animation: floatGlow 14s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .light-motion--secondary {
+        width: 520px;
+        height: 520px;
+        background: radial-gradient(circle at 70% 70%, var(--accent-strong, #7c3aed) 0%, transparent 70%);
+        animation-duration: 18s;
+        mix-blend-mode: screen;
+      }
+
+      .light-motion--top {
+        top: -120px;
+        left: -80px;
+      }
+
+      .light-motion--bottom {
+        bottom: -180px;
+        right: -40px;
+        animation-delay: 3s;
+      }
+
+      @keyframes floatGlow {
+        0% {
+          transform: translate3d(0, 0, 0) scale(1);
+          opacity: 0.4;
+        }
+        50% {
+          transform: translate3d(20px, -30px, 0) scale(1.08);
+          opacity: 0.6;
+        }
+        100% {
+          transform: translate3d(-10px, 30px, 0) scale(1);
+          opacity: 0.4;
+        }
+      }
+
+      main {
+        position: relative;
+        z-index: 1;
+      }
+    </style>
+    <div class="light-motion light-motion--top"></div>
+    <div class="light-motion light-motion--secondary light-motion--bottom"></div>
     <main style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; background: var(--bg-alt);">
       <div style="width: 100%; max-width: 400px; background: var(--bg-card); border-radius: 20px; padding: 2.5rem; box-shadow: 0 8px 32px var(--shadow-lg); border: 1px solid var(--border-light);">
         <h1 style="margin: 0 0 0.5rem 0; color: var(--text); font-size: 1.75rem; font-weight: 600;">Admin Login</h1>

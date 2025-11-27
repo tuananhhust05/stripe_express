@@ -36,9 +36,26 @@
 
     <main>
       <section id="home" class="hero hero--mono">
-        <div class="hero__bg"></div>
+        <div class="hero__bg" aria-hidden="true">
+          <div class="hero__aurora"></div>
+          <div class="hero__aurora hero__aurora--secondary"></div>
+          <div class="hero__gridlines">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+        <div class="hero__pointer" aria-hidden="true"></div>
+        <div class="hero__particles" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
         <div class="hero__grid">
-          <div class="hero__content">
+          <div class="hero__content" data-tilt>
             <div class="hero__badge">macOS · Always-on-top</div>
             <h1>Keep research, AI, and gestures one glance away.</h1>
             <p class="lede">
@@ -54,9 +71,10 @@
               <button type="button" class="btn ghost" onclick="window.location='#features'">See Features</button>
             </div>
           </div>
-          <div class="hero__visual">
+          <div class="hero__visual" data-tilt>
             <div class="hero__frame">
-              <div class="hero__floating glass-card">
+              <div class="hero__halo" aria-hidden="true"></div>
+              <div class="hero__floating glass-card" data-tilt>
                 <div class="glass-header">
                   <span>Monster Session</span>
                   <span class="status">LIVE</span>
@@ -70,7 +88,7 @@
                   <p class="metric-value">Custom</p>
                 </div>
               </div>
-              <div class="hero__stats">
+              <div class="hero__stats" data-tilt>
                 <div>
                   <p class="stat-value">3 sec</p>
                   <p class="stat-label">Capture &amp; solve</p>
@@ -90,27 +108,27 @@
       </section>
 
       <section id="features" class="feature-grid">
-        <div class="feature-card">
+        <div class="feature-card" data-spark>
           <h3>Native AI Support</h3>
           <p>Integrated AI capabilities to enhance your browsing experience and productivity.</p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card" data-spark>
           <h3>Text Sequence Hotkeys</h3>
           <p>Create powerful custom hotkeys to automate frequently used browsing actions.</p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card" data-spark>
           <h3>Gestures</h3>
           <p>Intuitive gesture controls for bringing up AI, screenshots, and more with a flick.</p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card" data-spark>
           <h3>Screenshots</h3>
           <p>Capture screens instantly with hotkeys and copy them to clipboard or AI.</p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card" data-spark>
           <h3>Capture &amp; Solve</h3>
           <p>Instantly capture your screen, send to AI, and receive step-by-step solutions.</p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card" data-spark>
           <h3>Always On Top</h3>
           <p>Keep your browser window floating above all applications without stealing focus.</p>
         </div>
@@ -122,7 +140,7 @@
           <h2>What’s live and what’s coming next</h2>
         </div>
         <div class="roadmap-grid">
-        <div class="roadmap-column">
+        <div class="roadmap-column" data-spark>
           <p class="eyebrow">Completed Features</p>
           <h2>Already available in Monster Edition</h2>
           <ul>
@@ -135,7 +153,7 @@
             <li>Lifetime Pro License support</li>
           </ul>
         </div>
-        <div class="roadmap-column">
+        <div class="roadmap-column" data-spark>
           <p class="eyebrow">Coming Soon</p>
           <h2>Exciting updates in development</h2>
           <ul>
@@ -153,7 +171,7 @@
           <h2>Unlock Monster Browser</h2>
         </div>
         <div class="plan-grid">
-          <div class="plan-card">
+          <div class="plan-card" data-spark>
             <p class="badge">One Month Usage</p>
             <h3 class="plan-price">$40</h3>
             <p class="plan-desc">Always-on-top floating browser window with distraction-free workflow integration.</p>
@@ -166,7 +184,7 @@
             <a class="btn primary full" href="/payment?plan=monthly">Purchase</a>
             <p class="note">Need help? support@shadow.link</p>
           </div>
-          <div class="plan-card highlighted">
+          <div class="plan-card highlighted" data-tilt data-spark>
             <p class="badge recommended">Recommended</p>
             <h3 class="plan-price">$120</h3>
             <p class="plan-label">Lifetime Basic License</p>
@@ -188,12 +206,12 @@
           <h2>Getting started takes minutes</h2>
         </div>
         <div class="step-grid">
-          <div class="step-card">
+          <div class="step-card" data-spark>
             <span class="step-number">1</span>
             <h3>Choose the plan and purchase the license</h3>
             <p>Select the plan that best fits your needs and complete a secure Stripe checkout.</p>
           </div>
-          <div class="step-card">
+          <div class="step-card" data-spark>
             <span class="step-number">2</span>
             <h3>Receive license + download link</h3>
             <p>Check your inbox (or spam) for your activation code and download instructions.</p>
@@ -207,27 +225,27 @@
           <h2>Answers for everything else</h2>
         </div>
         <div class="faq-grid">
-          <div class="faq-item">
+          <div class="faq-item" data-spark>
             <h3>Is Monster Edition available for Windows or Linux?</h3>
             <p>Currently macOS only. Cross-platform support is on the long-term roadmap.</p>
           </div>
-          <div class="faq-item">
+          <div class="faq-item" data-spark>
             <h3>Can I use it on multiple computers?</h3>
             <p>Licenses are tied to your activation code. Contact support for multi-seat options.</p>
           </div>
-          <div class="faq-item">
+          <div class="faq-item" data-spark>
             <h3>How do I get support?</h3>
             <p>Email support@shadow.link for help. We usually respond within 24 hours.</p>
           </div>
-          <div class="faq-item">
+          <div class="faq-item" data-spark>
             <h3>Do you offer trials?</h3>
             <p>Trials are not available yet, but we offer a straightforward refund policy.</p>
           </div>
-          <div class="faq-item">
+          <div class="faq-item" data-spark>
             <h3>Can I get discounts for multiple licenses?</h3>
             <p>Yes, reach out with your use case and we will craft a bulk offer.</p>
           </div>
-          <div class="faq-item">
+          <div class="faq-item" data-spark>
             <h3>How do I cancel subscriptions or request refunds?</h3>
             <p>Email support@shadow.link with your order ID. We’re happy to help.</p>
           </div>
@@ -313,6 +331,68 @@
             close();
           }
         });
+      })();
+    </script>
+    <script>
+      (() => {
+        const hero = document.querySelector('.hero');
+        const pointer = document.querySelector('.hero__pointer');
+        const tiltTargets = document.querySelectorAll('[data-tilt]');
+        const sparkTargets = document.querySelectorAll('[data-spark]');
+        const pointerMedia = window.matchMedia('(pointer: fine)');
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const canTilt = pointerMedia.matches && !reduceMotion.matches;
+
+        if (!canTilt && pointer) {
+          pointer.remove();
+        }
+
+        if (hero && pointer && canTilt) {
+          const movePointer = (event) => {
+            const rect = hero.getBoundingClientRect();
+            const relX = (event.clientX - rect.left) / rect.width - 0.5;
+            const relY = (event.clientY - rect.top) / rect.height - 0.5;
+
+            pointer.style.opacity = '1';
+            pointer.style.left = `${event.clientX - rect.left}px`;
+            pointer.style.top = `${event.clientY - rect.top}px`;
+
+            tiltTargets.forEach((el) => {
+              const tilt = el.dataset.tiltStrength ? Number(el.dataset.tiltStrength) : 10;
+              el.style.transform = `rotateX(${relY * -tilt}deg) rotateY(${relX * tilt}deg) translateZ(0)`;
+            });
+          };
+
+          hero.addEventListener('pointermove', movePointer);
+          hero.addEventListener('pointerleave', () => {
+            pointer.style.opacity = '0';
+            tiltTargets.forEach((el) => {
+              el.style.transform = '';
+            });
+          });
+        } else if (!canTilt) {
+          tiltTargets.forEach((el) => {
+            el.style.transform = '';
+          });
+        }
+
+        if ('IntersectionObserver' in window && !reduceMotion.matches) {
+          const observer = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                  entry.target.classList.add('is-visible');
+                  observer.unobserve(entry.target);
+                }
+              });
+            },
+            { threshold: 0.2 }
+          );
+
+          sparkTargets.forEach((el) => observer.observe(el));
+        } else {
+          sparkTargets.forEach((el) => el.classList.add('is-visible'));
+        }
       })();
     </script>
   </body>
