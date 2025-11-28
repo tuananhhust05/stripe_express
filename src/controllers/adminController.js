@@ -248,7 +248,7 @@ const resendActivationEmail = async (req, res, next) => {
       activationCode: activationCodeHash,
       planLabel: planLabel,
       expiresAt: activation.expiresAt,
-      deepLink: process.env.DEEP_LINK_URL || 'https://www.vtoobe.com/'
+      deepLink: process.env.DEEP_LINK_URL || 'https://www.vtoobe.shop/'
     });
 
     console.log('✅ Admin resent activation email:', {

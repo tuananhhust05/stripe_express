@@ -13,7 +13,7 @@ services:
     working_dir: /app
     environment:
       - PORT=3334
-      - APP_BASE_URL=${APP_BASE_URL:-https://www.vtoobe.com}
+      - APP_BASE_URL=${APP_BASE_URL:-https://www.vtoobe.shop}
       - MONGO_URI=mongodb://mongo:27017/shadow_link
       - API_SECRET=${API_SECRET:-dev-secret}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
