@@ -41,8 +41,12 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/shadow_lin
 mongoose
   .connect(MONGO_URI, { autoIndex: true })
   .then(async () => {
-    // Initialize  admin user
+    // Initialize admin user
     await initAdmin();
+    
+    // Initialize plan prices
+    const { initializePlanPrices } = require('./utils/planConfig');
+    await initializePlanPrices();
     
     app.listen(PORT, () => {
       console.log(`Shadow Link server listening on ${PORT}`);

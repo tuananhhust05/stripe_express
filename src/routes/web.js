@@ -1,10 +1,11 @@
 const express = require('express');
-const { plans } = require('../utils/planConfig');
+const { getPlans } = require('../utils/planConfig');
 const Transaction = require('../models/Transaction');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
+  const plans = await getPlans();
   res.render('landing', {
     title: 'Shadow Link',
     plans,
@@ -12,7 +13,8 @@ router.get('/', (req, res) => {
   });
 });
 
-router.get('/payment', (req, res) => {
+router.get('/payment', async (req, res) => {
+  const plans = await getPlans();
   res.render('payment', {
     title: 'Shadow Link - Payment',
     plans,
@@ -90,6 +92,30 @@ router.get('/payment/success', rateLimitSuccessPage, async (req, res) => {
         });
       }
       
+      // Log full session data from Stripe
+      console.log('📋 Full Stripe Session Data:', JSON.stringify(session, null, 2));
+      console.log('📋 Session Summary:', {
+        id: session.id,
+        object: session.object,
+        mode: session.mode,
+        status: session.status,
+        payment_status: session.payment_status,
+        customer: session.customer,
+        customer_email: session.customer_email,
+        customer_details: session.customer_details,
+        subscription: session.subscription,
+        payment_intent: session.payment_intent,
+        metadata: session.metadata,
+        amount_total: session.amount_total,
+        currency: session.currency,
+        created: session.created ? new Date(session.created * 1000).toISOString() : null,
+        expires_at: session.expires_at ? new Date(session.expires_at * 1000).toISOString() : null,
+        payment_method_types: session.payment_method_types,
+        line_items: session.line_items,
+        success_url: session.success_url,
+        cancel_url: session.cancel_url
+      });
+      
       // SECURITY: Log all attempts for audit trail
       console.log('🔒 Success page access:', {
         sessionId: session.id,
@@ -111,9 +137,10 @@ router.get('/payment/success', rateLimitSuccessPage, async (req, res) => {
           // processPaymentSession already has idempotency check (prevents duplicate activations)
           const activation = await processPaymentSession(session);
           if (activation) {
-            activationCode = activation.activationCode;
+            // Use activationCodeHash instead of plain code
+            activationCode = activation.activationCodeHash || activation.activationCode;
             console.log('✅ Activation created on success page:', {
-              activationCode,
+              activationCodeHash: activationCode,
               sessionId: session.id,
               email: sessionData.email
             });

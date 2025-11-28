@@ -16,9 +16,9 @@
         
         <% if (activationCode) { %>
           <!-- Activation code ready immediately -->
-          <div style="margin: 1.5rem 0; padding: 1.5rem; background: var(--bg-alt); border-radius: 12px; border: 1px solid var(--border);">
+          <div style="margin: 1.5rem 0; padding: 1.5rem; background: var(--bg-alt); border-radius: 12px; border: 1px solid var(--border); overflow: hidden;">
             <p style="margin: 0 0 0.5rem 0; color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Your Activation Code</p>
-            <p style="margin: 0; color: var(--text); font-size: 1.5rem; font-weight: 700; font-family: 'Monaco', 'Menlo', 'Courier New', monospace; letter-spacing: 0.1em;"><%= activationCode %></p>
+            <p style="margin: 0; color: var(--text); font-size: 1rem; font-weight: 700; font-family: 'Monaco', 'Menlo', 'Courier New', monospace; letter-spacing: 0.05em; word-break: break-all; overflow-wrap: break-word; line-height: 1.6;"><%= activationCode %></p>
             <p style="margin: 0.5rem 0 0 0; color: var(--muted); font-size: 0.85rem;">Check your email for full details</p>
           </div>
         <% } else if (sessionData && sessionData.email) { %>
@@ -27,9 +27,9 @@
             <p style="margin: 0;">Checking activation status...</p>
           </div>
           
-          <div id="activation-info" style="display: none; margin: 1.5rem 0; padding: 1.5rem; background: var(--bg-alt); border-radius: 12px; border: 1px solid var(--border);">
+          <div id="activation-info" style="display: none; margin: 1.5rem 0; padding: 1.5rem; background: var(--bg-alt); border-radius: 12px; border: 1px solid var(--border); overflow: hidden;">
             <p style="margin: 0 0 0.5rem 0; color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Activation Code</p>
-            <p id="activation-code" style="margin: 0; color: var(--text); font-size: 1.5rem; font-weight: 700; font-family: 'Monaco', 'Menlo', 'Courier New', monospace; letter-spacing: 0.1em;"></p>
+            <p id="activation-code" style="margin: 0; color: var(--text); font-size: 1rem; font-weight: 700; font-family: 'Monaco', 'Menlo', 'Courier New', monospace; letter-spacing: 0.05em; word-break: break-all; overflow-wrap: break-word; line-height: 1.6;"></p>
             <p style="margin: 0.5rem 0 0 0; color: var(--muted); font-size: 0.85rem;">Check your email for full details</p>
           </div>
         <% } %>

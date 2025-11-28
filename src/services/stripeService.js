@@ -104,8 +104,8 @@ const getPriceId = async (planId) => {
     return null;
   }
 
-  const { plans } = require('../utils/planConfig');
-  const plan = plans[planId];
+  const { getPlanOrThrow } = require('../utils/planConfig');
+  const plan = await getPlanOrThrow(planId);
   
   if (!plan) {
     throw new Error(`Plan ${planId} not found`);

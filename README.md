@@ -25,7 +25,7 @@ Single Express.js application that powers the Shadow Link landing page, Stripe-p
    ```bash
    npm run dev
    ```
-4. Visit `https://vtoobe.shop` for the landing page or `/payment` for checkout.
+4. Visit `https://www.vtoobe.com` for the landing page or `/payment` for checkout.
 
 ### Docker
 

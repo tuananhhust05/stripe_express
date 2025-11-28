@@ -37,5 +37,10 @@ router.get('/activations', requireAdmin, (req, res) => {
   res.render('admin/activations', { title: 'Activations' });
 });
 
+// Pricing page - just render the page, data will be loaded via API
+router.get('/pricing', requireAdmin, (req, res) => {
+  res.render('admin/pricing', { title: 'Pricing' });
+});
+
 module.exports = router;
 

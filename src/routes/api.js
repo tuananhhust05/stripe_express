@@ -1,6 +1,6 @@
 const express = require('express');
 const { createCheckoutSession } = require('../controllers/paymentController');
-const { validateActivation, getActivationStatus, verifyActivationCode } = require('../controllers/activationController');
+const { validateActivation, getActivationStatus, verifyActivationCode, redeemActivationCode, verifyToken } = require('../controllers/activationController');
 const { getTransactions } = require('../controllers/transactionController');
 const { adminLogin, adminLogout } = require('../controllers/adminController');
 const apiAuth = require('../middleware/apiAuth');
@@ -29,17 +29,26 @@ router.post('/admin/logout', adminLogout);
 
 // Admin data API (protected)
 const { requireAdmin } = require('../middleware/adminAuth');
-const { getAdminStats, getAdminTransactions, getAdminActivations } = require('../controllers/adminController');
+const { getAdminStats, getAdminTransactions, getAdminActivations, resendActivationEmail, getPlanPrices, updatePlanPrice } = require('../controllers/adminController');
 
 router.get('/admin/stats', requireAdmin, getAdminStats);
 router.get('/admin/transactions', requireAdmin, getAdminTransactions);
 router.get('/admin/activations', requireAdmin, getAdminActivations);
+router.post('/admin/activations/:id/resend-email', requireAdmin, resendActivationEmail);
+router.get('/admin/plan-prices', requireAdmin, getPlanPrices);
+router.put('/admin/plan-prices', requireAdmin, updatePlanPrice);
 
 // macOS app API routes (protected with secret)
 router.post('/validate', apiAuth, validateActivation);
 router.get('/status/:code', apiAuth, getActivationStatus);
 
-// Legacy/backward compatible route
+// Activation redeem (replaces /activations/verify)
+router.post('/activations/redeem', redeemActivationCode);
+
+// Activation token verification
+router.post('/activations/verifyToken', verifyToken);
+
+// Legacy/backward compatible route (deprecated, use /activations/redeem)
 router.post('/activations/verify', verifyActivationCode);
 
 module.exports = router;

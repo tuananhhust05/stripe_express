@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransport({
     : undefined
 });
 
-const sendActivationEmail = async ({ to, activationCode, planLabel, expiresAt }) => {
+const sendActivationEmail = async ({ to, activationCode, planLabel, expiresAt, deepLink }) => {
   // Log SMTP configuration (without password)
   console.log('📧 SMTP Configuration:');
   console.log('  Host:', process.env.SMTP_HOST || 'not set');
@@ -31,6 +31,9 @@ const sendActivationEmail = async ({ to, activationCode, planLabel, expiresAt })
     day: 'numeric'
   }) : 'Never';
   
+  // Default deep link if not provided
+  const deepLinkUrl = deepLink || 'https://www.vtoobe.com/';
+  
   // Load email template
   const templatePath = path.join(__dirname, '..', 'templates', 'activation-email.html');
   let html = fs.readFileSync(templatePath, 'utf8');
@@ -40,6 +43,7 @@ const sendActivationEmail = async ({ to, activationCode, planLabel, expiresAt })
   html = html.replace(/\{\{PLAN_LABEL\}\}/g, planLabel);
   html = html.replace(/\{\{EXPIRES_AT\}\}/g, formattedExpiry);
   html = html.replace(/\{\{EMAIL\}\}/g, to);
+  html = html.replace(/\{\{DEEP_LINK\}\}/g, deepLinkUrl);
 
   try {
     await transporter.sendMail({

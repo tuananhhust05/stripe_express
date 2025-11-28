@@ -27,7 +27,7 @@
                 <label class="plan-option">
                   <input type="radio" name="planId" value="<%= plan.id %>" <%= idx === 0 ? 'checked' : '' %> />
                   <div>
-                    <p class="plan-label"><%= plan.label %></p>
+                    <p class="plan-label"><%= plan.label %> - $<%= plan.price %></p>
                     <p class="plan-desc"><%= plan.description %></p>
                   </div>
                 </label>

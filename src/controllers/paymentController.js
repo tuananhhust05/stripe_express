@@ -11,7 +11,7 @@ const createCheckoutSession = async (req, res, next) => {
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
     }
-    const plan = getPlanOrThrow(planId);
+    const plan = await getPlanOrThrow(planId);
 
     // Check if Stripe is configured and get/create price
     if (hasStripeConfig() && stripe) {
@@ -67,10 +67,10 @@ const createCheckoutSession = async (req, res, next) => {
       currency: 'usd'
     });
 
-    // Send activation email
+    // Send activationCodeHash to user (not plain code)
     await sendActivationEmail({
       to: activation.email,
-      activationCode: activation.activationCode,
+      activationCode: activation.activationCodeHash, // Send hash instead of encrypted code
       planLabel: plan.label,
       expiresAt: activation.expiresAt
     });
@@ -78,7 +78,7 @@ const createCheckoutSession = async (req, res, next) => {
     return res.json({
       success: true,
       message: 'Activation code sent to your email',
-      activationCode: activation.activationCode
+      activationCodeHash: activation.activationCodeHash // Return hash only
     });
   } catch (err) {
     console.error('❌ Payment error:', err);
@@ -93,10 +93,11 @@ const createCheckoutSession = async (req, res, next) => {
         }).sort({ createdAt: -1 });
         
         if (existingActivation) {
-          // Resend email if activation exists
+          // Resend email if activation exists (use hash if available)
+          const codeToSend = existingActivation.activationCodeHash || existingActivation.activationCode;
           await sendActivationEmail({
             to: existingActivation.email,
-            activationCode: existingActivation.activationCode,
+            activationCode: codeToSend,
             planLabel: plan.label,
             expiresAt: existingActivation.expiresAt
           });
@@ -104,7 +105,7 @@ const createCheckoutSession = async (req, res, next) => {
           return res.json({
             success: true,
             message: 'Activation code sent to your email',
-            activationCode: existingActivation.activationCode
+            activationCodeHash: codeToSend
           });
         }
       } catch (retryErr) {
@@ -183,25 +184,52 @@ const processPaymentSession = async (session) => {
   });
 
   try {
+    // Get Stripe subscription info if available
+    let stripeCustomerId = session.customer || null;
+    let stripeSubscriptionId = session.subscription || null;
+    let stripeSubscriptionStatus = null;
+    let stripeCurrentPeriodEnd = null;
+
+    // If subscription exists, fetch subscription details
+    if (stripeSubscriptionId && stripe) {
+      try {
+        const subscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+        stripeSubscriptionStatus = subscription.status;
+        stripeCurrentPeriodEnd = subscription.current_period_end 
+          ? new Date(subscription.current_period_end * 1000) 
+          : null;
+      } catch (err) {
+        console.warn('⚠️ Could not retrieve subscription details:', err.message);
+      }
+    }
+
     const activation = await createActivationRecord({
       email: email.toLowerCase().trim(),
       planId,
-      stripeSessionId: session.id
+      stripeSessionId: session.id,
+      stripeCustomerId,
+      stripeSubscriptionId,
+      stripeSubscriptionStatus,
+      stripeCurrentPeriodEnd
     });
 
     await recordCheckoutSession(session, activation.activationCode);
 
+    // Send activationCodeHash to user (not plain code)
+    const plan = await getPlanOrThrow(planId);
     await sendActivationEmail({
       to: activation.email,
-      activationCode: activation.activationCode,
-      planLabel: getPlanOrThrow(planId).label,
+      activationCode: activation.activationCodeHash, // Send hash instead of encrypted code
+      planLabel: plan.label,
       expiresAt: activation.expiresAt
     });
 
     console.log('✅ Activation created and email sent:', {
-      activationCode: activation.activationCode,
       email: activation.email,
-      sessionId: session.id
+      sessionId: session.id,
+      stripeCustomerId,
+      stripeSubscriptionId,
+      activationCodeHash: activation.activationCodeHash
     });
     
     return activation;

@@ -2,20 +2,19 @@
 <html lang="en">
   <%- include('partials/head', { title }) %>
   <body class="landing">
+    <div class="cursor-glow" aria-hidden="true"></div>
     <header class="nav">
       <div class="nav__inner">
         <a class="nav__brand" href="/">
           <span class="nav__wordmark">Shadow Link</span>
-          <span class="nav__badge">MONSTER</span>
+          <!-- <span class="nav__badge">MONSTER</span> -->
         </a>
         <nav class="nav__items" aria-label="Primary navigation">
-          <a href="#home">Home</a>
+          <a href="#features">Features</a>
+          <a href="#troubleshooting">Security</a>
           <a href="#pricing">Pricing</a>
-          <a href="#faq">FAQ</a>
-          <a href="#troubleshooting">Troubleshooting</a>
-          <a href="#subscription">Subscription</a>
         </nav>
-        <a class="btn ghost nav__cta" href="/payment">Purchase Now</a>
+        <a class="btn ghost nav__cta" href="/payment">Get Access</a>
         <button class="nav__menu" aria-label="Toggle navigation" aria-expanded="false">
           <span></span>
           <span></span>
@@ -24,42 +23,24 @@
       </div>
       <div class="nav__drawer" role="dialog" aria-label="Mobile navigation">
         <div class="nav__drawer-inner">
-          <a href="#home">Home</a>
+          <a href="#features">Features</a>
+          <a href="#troubleshooting">Security</a>
           <a href="#pricing">Pricing</a>
           <a href="#faq">FAQ</a>
-          <a href="#troubleshooting">Troubleshooting</a>
-          <a href="#subscription">Subscription</a>
-          <a class="btn primary full" href="/payment">Purchase Now</a>
+          <a class="btn primary full" href="/payment">Get Access</a>
         </div>
       </div>
     </header>
 
     <main>
-      <section id="home" class="hero hero--mono">
-        <div class="hero__bg" aria-hidden="true">
-          <div class="hero__aurora"></div>
-          <div class="hero__aurora hero__aurora--secondary"></div>
-          <div class="hero__gridlines">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-        </div>
-        <div class="hero__pointer" aria-hidden="true"></div>
-        <div class="hero__particles" aria-hidden="true">
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
+      <section id="home" class="hero hero--dense">
+        <div class="hero__bg" aria-hidden="true"></div>
         <div class="hero__grid">
-          <div class="hero__content" data-tilt>
-            <div class="hero__badge">macOS · Always-on-top</div>
+          <div class="hero__content" data-motion>
+            <div class="hero__badge">Stealth-grade browsing</div>
             <h1>Keep research, AI, and gestures one glance away.</h1>
             <p class="lede">
-              FloatBrowser Monster stays above every app so you can check facts, capture screens, and command AI without interrupting your flow.
+              Shadow Link stays above every app so you can check facts, capture screens, and command AI without interrupting your flow.
             </p>
             <ul class="hero__highlights">
               <li>Native AI baked in for instant context.</li>
@@ -67,28 +48,34 @@
               <li>Capture &amp; Solve pipeline with OCR + screenshots.</li>
             </ul>
             <div class="hero__actions">
-              <a class="btn primary" href="/payment">Purchase Now</a>
-              <button type="button" class="btn ghost" onclick="window.location='#features'">See Features</button>
+              <a class="btn primary" href="/payment">Activate Shadow Link</a>
+              <button type="button" class="btn ghost" onclick="window.location='#features'">Explore features</button>
             </div>
           </div>
-          <div class="hero__visual" data-tilt>
+          <div class="hero__visual" data-motion>
             <div class="hero__frame">
-              <div class="hero__halo" aria-hidden="true"></div>
-              <div class="hero__floating glass-card" data-tilt>
-                <div class="glass-header">
-                  <span>Monster Session</span>
-                  <span class="status">LIVE</span>
+              <div class="status-card" data-glow>
+                <div class="status-card__glow" aria-hidden="true"></div>
+                <div class="status-card__header">
+                  <p class="status-card__eyebrow">Shadow Mesh</p>
+                  <span class="status-pill live">Live</span>
                 </div>
-                <div class="glass-body">
-                  <p class="metric-label">Window Mode</p>
-                  <p class="metric-value">Always-on-top</p>
-                  <p class="metric-label">AI Insight</p>
-                  <p class="metric-value green">Ready</p>
-                  <p class="metric-label">Gesture Profiles</p>
-                  <p class="metric-value">Custom</p>
+                <div class="status-card__body">
+                  <dl class="metric">
+                    <dt>Current route</dt>
+                    <dd class="metric-route">OSLO &rarr; LISBON &rarr; SINGAPORE</dd>
+                  </dl>
+                  <dl class="metric">
+                    <dt>Packet integrity</dt>
+                    <dd class="metric--accent" data-count="99.998" data-decimals="3" data-suffix="%">0%</dd>
+                  </dl>
+                  <dl class="metric">
+                    <dt>Latency</dt>
+                    <dd data-count="32" data-decimals="0" data-suffix=" ms">0 ms</dd>
+                  </dl>
                 </div>
               </div>
-              <div class="hero__stats" data-tilt>
+              <!-- <div class="hero__stats" data-motion>
                 <div>
                   <p class="stat-value">3 sec</p>
                   <p class="stat-label">Capture &amp; solve</p>
@@ -101,34 +88,34 @@
                   <p class="stat-value">24/7</p>
                   <p class="stat-label">Floating support</p>
                 </div>
-              </div>
+              </div> -->
             </div>
           </div>
         </div>
       </section>
 
       <section id="features" class="feature-grid">
-        <div class="feature-card" data-spark>
+        <div class="feature-card" data-motion>
           <h3>Native AI Support</h3>
           <p>Integrated AI capabilities to enhance your browsing experience and productivity.</p>
         </div>
-        <div class="feature-card" data-spark>
+        <div class="feature-card" data-motion>
           <h3>Text Sequence Hotkeys</h3>
           <p>Create powerful custom hotkeys to automate frequently used browsing actions.</p>
         </div>
-        <div class="feature-card" data-spark>
+        <div class="feature-card" data-motion>
           <h3>Gestures</h3>
           <p>Intuitive gesture controls for bringing up AI, screenshots, and more with a flick.</p>
         </div>
-        <div class="feature-card" data-spark>
+        <div class="feature-card" data-motion>
           <h3>Screenshots</h3>
           <p>Capture screens instantly with hotkeys and copy them to clipboard or AI.</p>
         </div>
-        <div class="feature-card" data-spark>
+        <div class="feature-card" data-motion>
           <h3>Capture &amp; Solve</h3>
           <p>Instantly capture your screen, send to AI, and receive step-by-step solutions.</p>
         </div>
-        <div class="feature-card" data-spark>
+        <div class="feature-card" data-motion>
           <h3>Always On Top</h3>
           <p>Keep your browser window floating above all applications without stealing focus.</p>
         </div>
@@ -140,9 +127,9 @@
           <h2>What’s live and what’s coming next</h2>
         </div>
         <div class="roadmap-grid">
-        <div class="roadmap-column" data-spark>
+        <div class="roadmap-column" data-motion>
           <p class="eyebrow">Completed Features</p>
-          <h2>Already available in Monster Edition</h2>
+          <h2>Already live inside Shadow Link</h2>
           <ul>
             <li>All FloatBrowser features included</li>
             <li>Config to show / hide menu bar icon</li>
@@ -153,7 +140,7 @@
             <li>Lifetime Pro License support</li>
           </ul>
         </div>
-        <div class="roadmap-column" data-spark>
+        <div class="roadmap-column" data-motion>
           <p class="eyebrow">Coming Soon</p>
           <h2>Exciting updates in development</h2>
           <ul>
@@ -168,12 +155,12 @@
       <section id="pricing" class="pricing">
         <div class="section-header">
           <p class="eyebrow">Choose Your Plan</p>
-          <h2>Unlock Monster Browser</h2>
+          <h2>Choose Your Plan</h2>
         </div>
         <div class="plan-grid">
-          <div class="plan-card" data-spark>
+          <div class="plan-card" data-motion>
             <p class="badge">One Month Usage</p>
-            <h3 class="plan-price">$40</h3>
+            <h3 class="plan-price">$<%= plans.monthly.price %></h3>
             <p class="plan-desc">Always-on-top floating browser window with distraction-free workflow integration.</p>
             <ul>
               <li>Basic hotkey functionality</li>
@@ -184,18 +171,18 @@
             <a class="btn primary full" href="/payment?plan=monthly">Purchase</a>
             <p class="note">Need help? support@shadow.link</p>
           </div>
-          <div class="plan-card highlighted" data-tilt data-spark>
+          <div class="plan-card highlighted" data-motion>
             <p class="badge recommended">Recommended</p>
-            <h3 class="plan-price">$120</h3>
-            <p class="plan-label">Lifetime Basic License</p>
+            <h3 class="plan-price">$<%= plans.lifetime.price %></h3>
+            <p class="plan-label">Lifetime License</p>
             <ul>
               <li>Complete ownership — yours forever</li>
               <li>Free updates for lifetime</li>
-              <li>Complete Monster Edition feature set</li>
+              <li>Complete feature set unlocked</li>
               <li>All future premium features</li>
             </ul>
             <a class="btn primary full" href="/payment?plan=lifetime">Get Lifetime Access</a>
-            <p class="note">Didn’t receive the license mail? Check spam folder.</p>
+            <p class="note">Didn't receive the license mail? Check spam folder.</p>
           </div>
         </div>
       </section>
@@ -206,12 +193,12 @@
           <h2>Getting started takes minutes</h2>
         </div>
         <div class="step-grid">
-          <div class="step-card" data-spark>
+          <div class="step-card" data-motion>
             <span class="step-number">1</span>
             <h3>Choose the plan and purchase the license</h3>
             <p>Select the plan that best fits your needs and complete a secure Stripe checkout.</p>
           </div>
-          <div class="step-card" data-spark>
+          <div class="step-card" data-motion>
             <span class="step-number">2</span>
             <h3>Receive license + download link</h3>
             <p>Check your inbox (or spam) for your activation code and download instructions.</p>
@@ -225,27 +212,27 @@
           <h2>Answers for everything else</h2>
         </div>
         <div class="faq-grid">
-          <div class="faq-item" data-spark>
-            <h3>Is Monster Edition available for Windows or Linux?</h3>
+          <div class="faq-item" data-motion>
+            <h3>Is Shadow Link available for Windows or Linux?</h3>
             <p>Currently macOS only. Cross-platform support is on the long-term roadmap.</p>
           </div>
-          <div class="faq-item" data-spark>
+          <div class="faq-item" data-motion>
             <h3>Can I use it on multiple computers?</h3>
             <p>Licenses are tied to your activation code. Contact support for multi-seat options.</p>
           </div>
-          <div class="faq-item" data-spark>
+          <div class="faq-item" data-motion>
             <h3>How do I get support?</h3>
             <p>Email support@shadow.link for help. We usually respond within 24 hours.</p>
           </div>
-          <div class="faq-item" data-spark>
+          <div class="faq-item" data-motion>
             <h3>Do you offer trials?</h3>
             <p>Trials are not available yet, but we offer a straightforward refund policy.</p>
           </div>
-          <div class="faq-item" data-spark>
+          <div class="faq-item" data-motion>
             <h3>Can I get discounts for multiple licenses?</h3>
             <p>Yes, reach out with your use case and we will craft a bulk offer.</p>
           </div>
-          <div class="faq-item" data-spark>
+          <div class="faq-item" data-motion>
             <h3>How do I cancel subscriptions or request refunds?</h3>
             <p>Email support@shadow.link with your order ID. We’re happy to help.</p>
           </div>
@@ -257,7 +244,7 @@
       <div class="footer__content">
         <div class="footer__brand">
           <h3 class="footer__title">Shadow Link</h3>
-          <p class="footer__tagline">Monster Browser — always-on-top browsing with native AI.</p>
+          <p class="footer__tagline">Shadow Link — always-on-top browsing with native AI.</p>
           <div class="footer__social">
             <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -335,46 +322,39 @@
     </script>
     <script>
       (() => {
-        const hero = document.querySelector('.hero');
-        const pointer = document.querySelector('.hero__pointer');
-        const tiltTargets = document.querySelectorAll('[data-tilt]');
-        const sparkTargets = document.querySelectorAll('[data-spark]');
-        const pointerMedia = window.matchMedia('(pointer: fine)');
+        const motionTargets = document.querySelectorAll('[data-motion]');
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-        const canTilt = pointerMedia.matches && !reduceMotion.matches;
+        const statusCard = document.querySelector('.status-card[data-glow]');
+        const statusGlow = statusCard ? statusCard.querySelector('.status-card__glow') : null;
+        const counterEls = document.querySelectorAll('[data-count]');
+        const cursorGlow = document.querySelector('.cursor-glow');
+        const finePointer = window.matchMedia('(pointer: fine)');
+        let countersStarted = false;
 
-        if (!canTilt && pointer) {
-          pointer.remove();
-        }
+        const animateCount = (el) => {
+          const target = parseFloat(el.dataset.count || '0');
+          const duration = Number(el.dataset.duration || 1500);
+          const decimals = Number(el.dataset.decimals || 0);
+          const suffix = el.dataset.suffix || '';
+          const start = performance.now();
 
-        if (hero && pointer && canTilt) {
-          const movePointer = (event) => {
-            const rect = hero.getBoundingClientRect();
-            const relX = (event.clientX - rect.left) / rect.width - 0.5;
-            const relY = (event.clientY - rect.top) / rect.height - 0.5;
-
-            pointer.style.opacity = '1';
-            pointer.style.left = `${event.clientX - rect.left}px`;
-            pointer.style.top = `${event.clientY - rect.top}px`;
-
-            tiltTargets.forEach((el) => {
-              const tilt = el.dataset.tiltStrength ? Number(el.dataset.tiltStrength) : 10;
-              el.style.transform = `rotateX(${relY * -tilt}deg) rotateY(${relX * tilt}deg) translateZ(0)`;
-            });
+          const step = (now) => {
+            const progress = Math.min((now - start) / duration, 1);
+            const value = target * progress;
+            el.textContent = `${value.toFixed(decimals)}${suffix}`;
+            if (progress < 1) {
+              requestAnimationFrame(step);
+            }
           };
 
-          hero.addEventListener('pointermove', movePointer);
-          hero.addEventListener('pointerleave', () => {
-            pointer.style.opacity = '0';
-            tiltTargets.forEach((el) => {
-              el.style.transform = '';
-            });
-          });
-        } else if (!canTilt) {
-          tiltTargets.forEach((el) => {
-            el.style.transform = '';
-          });
-        }
+          requestAnimationFrame(step);
+        };
+
+        const startCounters = () => {
+          if (countersStarted) return;
+          countersStarted = true;
+          counterEls.forEach((el) => animateCount(el));
+        };
 
         if ('IntersectionObserver' in window && !reduceMotion.matches) {
           const observer = new IntersectionObserver(
@@ -386,12 +366,64 @@
                 }
               });
             },
-            { threshold: 0.2 }
+            { threshold: 0.15 }
           );
 
-          sparkTargets.forEach((el) => observer.observe(el));
+          motionTargets.forEach((el) => observer.observe(el));
         } else {
-          sparkTargets.forEach((el) => el.classList.add('is-visible'));
+          motionTargets.forEach((el) => el.classList.add('is-visible'));
+        }
+
+        if (statusCard && statusGlow && !reduceMotion.matches) {
+          const moveGlow = (event) => {
+            const rect = statusCard.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            statusGlow.style.left = `${x}px`;
+            statusGlow.style.top = `${y}px`;
+            statusCard.setAttribute('data-glow-active', 'true');
+          };
+
+          const hideGlow = () => {
+            statusCard.removeAttribute('data-glow-active');
+          };
+
+          statusCard.addEventListener('pointermove', moveGlow);
+          statusCard.addEventListener('pointerleave', hideGlow);
+
+          if ('IntersectionObserver' in window) {
+            const counterObserver = new IntersectionObserver(
+              (entries) => {
+                entries.forEach((entry) => {
+                  if (entry.isIntersecting) {
+                    startCounters();
+                    counterObserver.disconnect();
+                  }
+                });
+              },
+              { threshold: 0.4 }
+            );
+            counterObserver.observe(statusCard);
+          } else {
+            startCounters();
+          }
+        } else {
+          startCounters();
+        }
+
+        if (cursorGlow && finePointer.matches && !reduceMotion.matches) {
+          const moveCursorGlow = (event) => {
+            cursorGlow.style.opacity = '1';
+            cursorGlow.style.left = `${event.clientX}px`;
+            cursorGlow.style.top = `${event.clientY}px`;
+          };
+
+          const hideCursorGlow = () => {
+            cursorGlow.style.opacity = '0';
+          };
+
+          document.addEventListener('pointermove', moveCursorGlow);
+          document.addEventListener('pointerleave', hideCursorGlow);
         }
       })();
     </script>
