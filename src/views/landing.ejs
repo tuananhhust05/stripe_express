@@ -6,20 +6,41 @@
     <header class="nav">
       <div class="nav__inner">
         <a class="nav__brand" href="/">
-          <span class="nav__wordmark">Shadow Link</span>
-          <!-- <span class="nav__badge">MONSTER</span> -->
+          <img src="/logo.svg" alt="Shadow Link" class="nav__logo" style="height: 160px; width: auto; display: block;" />
         </a>
         <nav class="nav__items" aria-label="Primary navigation">
           <a href="#features">Features</a>
           <a href="#troubleshooting">Security</a>
           <a href="#pricing">Pricing</a>
         </nav>
-        <a class="btn ghost nav__cta" href="/payment">Get Access</a>
-        <button class="nav__menu" aria-label="Toggle navigation" aria-expanded="false">
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
+        <div class="nav__actions">
+          <% if (user) { %>
+            <div class="nav__user-menu">
+              <div class="nav__user-info">
+                <span class="nav__user-email"><%= user.email %></span>
+                <% if (user.subscriptionStatus === 'active') { %>
+                  <span class="nav__user-badge active">Active</span>
+                <% } else { %>
+                  <span class="nav__user-badge">No Subscription</span>
+                <% } %>
+              </div>
+              <div class="nav__user-dropdown">
+                <a href="/subscription" class="nav__user-link">Subscription</a>
+                <button class="nav__user-link nav__logout-btn" style="border: none; background: none; color: inherit; cursor: pointer; width: 100%; text-align: left; padding: 0.5rem 1rem;">Logout</button>
+              </div>
+            </div>
+          <% } else { %>
+            <div class="nav__auth-buttons">
+              <a class="btn ghost nav__cta" href="/login">Login</a>
+              <a class="btn primary nav__cta" href="/register">Sign Up</a>
+            </div>
+          <% } %>
+          <button class="nav__menu" aria-label="Toggle navigation" aria-expanded="false">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
       </div>
       <div class="nav__drawer" role="dialog" aria-label="Mobile navigation">
         <div class="nav__drawer-inner">
@@ -27,7 +48,13 @@
           <a href="#troubleshooting">Security</a>
           <a href="#pricing">Pricing</a>
           <a href="#faq">FAQ</a>
-          <a class="btn primary full" href="/payment">Get Access</a>
+          <% if (user) { %>
+            <a href="/subscription" class="btn primary full">Subscription</a>
+            <button class="btn ghost full nav__logout-btn-mobile" style="margin-top: 0.5rem;">Logout</button>
+          <% } else { %>
+            <a class="btn ghost full" href="/login" style="margin-bottom: 0.5rem;">Login</a>
+            <a class="btn primary full" href="/register">Sign Up</a>
+          <% } %>
         </div>
       </div>
     </header>
@@ -48,8 +75,13 @@
               <li>Capture &amp; Solve pipeline with OCR + screenshots.</li>
             </ul>
             <div class="hero__actions">
-              <a class="btn primary" href="/payment">Activate Shadow Link</a>
-              <button type="button" class="btn ghost" onclick="window.location='#features'">Explore features</button>
+              <% if (user) { %>
+                <a class="btn primary" href="/subscription">Manage Subscription</a>
+                <button type="button" class="btn ghost" onclick="window.location='#features'">Explore features</button>
+              <% } else { %>
+                <a class="btn primary" href="/register">Get Started</a>
+                <button type="button" class="btn ghost" onclick="window.location='#features'">Explore features</button>
+              <% } %>
             </div>
           </div>
           <div class="hero__visual" data-motion>

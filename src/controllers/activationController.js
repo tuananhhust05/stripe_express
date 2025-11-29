@@ -110,9 +110,17 @@ const redeemActivationCode = async (req, res, next) => {
       result.data.expiresAt
     );
 
-    // Log session data for debugging
-    if (result.data.session) {
-      console.log('✅ Activation redeemed with Stripe session:', {
+    // Log subscription/session data for debugging
+    if (result.data.subscription) {
+      console.log('✅ Activation redeemed with Stripe subscription:', {
+        activationCode: activationCode.substring(0, 8) + '...',
+        subscriptionId: result.data.subscriptionId,
+        subscriptionStatus: result.data.subscriptionStatus,
+        plan: result.data.plan,
+        deviceId: deviceId
+      });
+    } else if (result.data.session) {
+      console.log('✅ Activation redeemed with Stripe session (legacy):', {
         activationCode: activationCode.substring(0, 8) + '...',
         sessionId: result.data.session.id,
         paymentStatus: result.data.session.payment_status,
@@ -156,9 +164,16 @@ const verifyActivationCode = async (req, res, next) => {
       return res.status(404).json(result);
     }
 
-    // Log session data for debugging
-    if (result.data.session) {
-      console.log('✅ Activation verified with Stripe session:', {
+    // Log subscription/session data for debugging
+    if (result.data.subscription) {
+      console.log('✅ Activation verified with Stripe subscription:', {
+        activationCode: activationCode.substring(0, 8) + '...',
+        subscriptionId: result.data.subscriptionId,
+        subscriptionStatus: result.data.subscriptionStatus,
+        plan: result.data.plan
+      });
+    } else if (result.data.session) {
+      console.log('✅ Activation verified with Stripe session (legacy):', {
         activationCode: activationCode.substring(0, 8) + '...',
         sessionId: result.data.session.id,
         paymentStatus: result.data.session.payment_status,

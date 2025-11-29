@@ -23,6 +23,23 @@ const generateToken = (adminId, username) => {
 };
 
 /**
+ * Generate JWT token for user
+ */
+const generateUserToken = (userId, email) => {
+  const payload = {
+    userId: userId.toString(),
+    email,
+    type: 'user'
+  };
+
+  return jwt.sign(payload, JWT_SECRET, {
+    expiresIn: JWT_EXPIRES_IN,
+    issuer: 'shadow-link',
+    audience: 'user'
+  });
+};
+
+/**
  * Generate JWT token for activation (access token)
  * Token expiration depends on plan expiry:
  * - Monthly plan: Token expires when activation expires
@@ -128,17 +145,42 @@ const verifyActivationToken = (token) => {
 };
 
 /**
+ * Verify JWT token (for user)
+ */
+const verifyUserToken = (token) => {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET, {
+      issuer: 'shadow-link',
+      audience: 'user'
+    });
+    return { valid: true, payload: decoded };
+  } catch (error) {
+    return { valid: false, error: error.message };
+  }
+};
+
+/**
  * Get token from cookie
  */
 const getTokenFromCookie = (req) => {
   return req.cookies?.adminToken || null;
 };
 
+/**
+ * Get user token from cookie
+ */
+const getUserTokenFromCookie = (req) => {
+  return req.cookies?.userToken || null;
+};
+
 module.exports = {
   generateToken,
+  generateUserToken,
   generateActivationToken,
   verifyToken,
+  verifyUserToken,
   verifyActivationToken,
-  getTokenFromCookie
+  getTokenFromCookie,
+  getUserTokenFromCookie
 };
 

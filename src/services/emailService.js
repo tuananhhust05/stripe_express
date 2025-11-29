@@ -39,8 +39,11 @@ const sendActivationEmail = async ({ to, activationCode, planLabel, expiresAt, d
   let html = fs.readFileSync(templatePath, 'utf8');
   
   // Replace placeholders
+  // Ensure planLabel is not undefined
+  const finalPlanLabel = planLabel || 'Subscription Plan';
+  
   html = html.replace(/\{\{ACTIVATION_CODE\}\}/g, activationCode);
-  html = html.replace(/\{\{PLAN_LABEL\}\}/g, planLabel);
+  html = html.replace(/\{\{PLAN_LABEL\}\}/g, finalPlanLabel);
   html = html.replace(/\{\{EXPIRES_AT\}\}/g, formattedExpiry);
   html = html.replace(/\{\{EMAIL\}\}/g, to);
   html = html.replace(/\{\{DEEP_LINK\}\}/g, deepLinkUrl);

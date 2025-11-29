@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include('partials/head', { title }) %>
+  <style>
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem !important;
+      }
+      .subscription-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 1rem;
+      }
+      .subscription-header h1 {
+        font-size: 1.5rem !important;
+        margin-bottom: 0.5rem !important;
+      }
+      .subscription-header > div {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: flex-start;
+      }
+      .subscription-header > div > span {
+        font-size: 0.9rem !important;
+        margin-right: 0 !important;
+        margin-bottom: 0.5rem;
+      }
+      .subscription-header > div > button {
+        width: 100%;
+      }
+      .subscription-container {
+        padding: 0 !important;
+      }
+      .subscription-card {
+        padding: 1.5rem !important;
+        margin-bottom: 1.5rem !important;
+      }
+      .subscription-card h2 {
+        font-size: 1.25rem !important;
+        margin-bottom: 1rem !important;
+      }
+      .status-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+      }
+      .status-grid > div {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--border-light);
+      }
+      .status-grid > div:last-child {
+        border-bottom: none;
+      }
+      .button-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
+      }
+      .button-grid-2 {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
+      }
+      .button-grid button,
+      .button-grid-2 button {
+        width: 100%;
+        padding: 0.875rem 1rem !important;
+        font-size: 0.95rem;
+      }
+      #error-message,
+      #success-message {
+        font-size: 0.85rem !important;
+        padding: 0.625rem 0.875rem !important;
+        word-break: break-word;
+      }
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 0.75rem !important;
+      }
+      .subscription-container {
+        padding: 0 !important;
+      }
+      .subscription-card {
+        padding: 1rem !important;
+        border-radius: 12px !important;
+      }
+      .subscription-card h2 {
+        font-size: 1.1rem !important;
+      }
+      .subscription-header h1 {
+        font-size: 1.25rem !important;
+      }
+      .status-grid > div > p:first-child {
+        font-size: 0.8rem !important;
+      }
+      .status-grid > div > p:last-child {
+        font-size: 1rem !important;
+      }
+    }
+  </style>
+  <body style="background: var(--bg-alt); min-height: 100vh; padding: 1rem 2rem;">
+    <div class="subscription-container" style="max-width: 800px; margin: 0 auto;">
+      <div class="subscription-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1 style="color: var(--text); font-size: 2rem; font-weight: 600; margin: 0;">Subscription Management</h1>
+        <div>
+          <span style="color: var(--muted); margin-right: 1rem; display: inline-block; word-break: break-word;"><%= user.email %></span>
+          <button id="logout-btn" class="btn ghost" style="padding: 0.5rem 1rem;">Logout</button>
+        </div>
+      </div>
+
+      <div id="error-message" style="display: none; background: #ff3b30; color: white; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.9rem;"></div>
+      <div id="success-message" style="display: none; background: var(--green); color: white; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.9rem;"></div>
+
+      <!-- Current Subscription Status -->
+      <div id="subscription-status" class="subscription-card" style="background: var(--bg-card); border-radius: 16px; padding: 2rem; margin-bottom: 2rem; border: 1px solid var(--border-light);">
+        <h2 style="margin: 0 0 1.5rem 0; color: var(--text); font-size: 1.5rem;">Current Subscription</h2>
+        <div id="status-content" style="color: var(--muted);">Loading...</div>
+      </div>
+
+      <!-- Subscription Actions -->
+      <div id="subscription-actions" class="subscription-card" style="background: var(--bg-card); border-radius: 16px; padding: 2rem; border: 1px solid var(--border-light);">
+        <h2 style="margin: 0 0 1.5rem 0; color: var(--text); font-size: 1.5rem;">Manage Subscription</h2>
+        
+        <div id="no-subscription" style="display: none;">
+          <p style="color: var(--muted); margin-bottom: 1.5rem;">You don't have an active subscription. Choose a plan to get started:</p>
+          <div class="button-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <button class="btn primary" onclick="createSubscription('monthly')" style="padding: 1rem;">Subscribe Monthly</button>
+            <button class="btn primary" onclick="createSubscription('lifetime')" style="padding: 1rem;">Buy Lifetime</button>
+          </div>
+        </div>
+
+        <div id="has-subscription" style="display: none;">
+          <div class="button-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+            <button id="switch-monthly-btn" class="btn primary" onclick="changeSubscription('monthly')" style="padding: 1rem; display: none;">Switch to Monthly</button>
+            <button id="upgrade-lifetime-btn" class="btn primary" onclick="changeSubscription('lifetime')" style="padding: 1rem; display: none;">Upgrade to Lifetime</button>
+          </div>
+          <div class="button-grid-2" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <button id="cancel-btn" class="btn ghost" onclick="cancelSubscription()" style="padding: 1rem;">Cancel Subscription</button>
+            <button id="reactivate-btn" class="btn primary" onclick="reactivateSubscription()" style="padding: 1rem; display: none;">Reactivate Subscription</button>
+            <button id="stop-service-btn" class="btn" onclick="stopService()" style="padding: 1rem; display: none; background: #ff3b30; color: white;">Stop Service</button>
+            <button id="start-service-btn" class="btn primary" onclick="startService()" style="padding: 1rem; display: none;">Start Service</button>
+            <button id="delete-subscription-btn" class="btn" onclick="deleteSubscription()" style="padding: 1rem; background: #ff3b30; color: white;">Delete Subscription</button>
+          </div>
+        </div>
+      </div>
+
+      <p style="margin-top: 2rem; text-align: center;">
+        <a href="/" style="color: var(--accent); text-decoration: none;">← Back to site</a>
+      </p>
+    </div>
+
+    <script>
+      let currentSubscription = null;
+
+      // Helper function to set loading state for buttons
+      function setButtonLoading(button, isLoading) {
+        if (!button) return;
+        
+        if (isLoading) {
+          button.disabled = true;
+          button.dataset.originalText = button.textContent;
+          button.innerHTML = '<span style="display: inline-block; width: 16px; height: 16px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 0.5rem; vertical-align: middle;"></span>Loading...';
+          button.style.opacity = '0.7';
+          button.style.cursor = 'not-allowed';
+        } else {
+          button.disabled = false;
+          if (button.dataset.originalText) {
+            button.textContent = button.dataset.originalText;
+            delete button.dataset.originalText;
+          }
+          button.style.opacity = '1';
+          button.style.cursor = 'pointer';
+        }
+      }
+
+      // Add CSS for spinner animation
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+
+      async function loadSubscriptionStatus() {
+        try {
+          const response = await fetch('/api/subscriptions/status');
+          const result = await response.json();
+
+          if (result.success) {
+            currentSubscription = result.subscription;
+            updateUI(result.subscription);
+          }
+        } catch (error) {
+          console.error('Error loading subscription:', error);
+          document.getElementById('status-content').textContent = 'Error loading subscription status';
+        }
+      }
+
+      function updateUI(subscription) {
+        const statusContent = document.getElementById('status-content');
+        const noSubscription = document.getElementById('no-subscription');
+        const hasSubscription = document.getElementById('has-subscription');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const reactivateBtn = document.getElementById('reactivate-btn');
+        const stopServiceBtn = document.getElementById('stop-service-btn');
+        const startServiceBtn = document.getElementById('start-service-btn');
+        const switchMonthlyBtn = document.getElementById('switch-monthly-btn');
+        const upgradeLifetimeBtn = document.getElementById('upgrade-lifetime-btn');
+
+        if (!subscription.status || subscription.status === 'canceled') {
+          statusContent.innerHTML = '<p style="color: var(--muted);">No active subscription</p>';
+          noSubscription.style.display = 'block';
+          hasSubscription.style.display = 'none';
+        } else {
+          const plan = subscription.plan || 'N/A';
+          const status = subscription.status || 'N/A';
+          const periodEnd = subscription.currentPeriodEnd 
+            ? new Date(subscription.currentPeriodEnd).toLocaleDateString()
+            : 'N/A';
+          const serviceEnabled = subscription.serviceEnabled !== false; // Default to true
+
+          statusContent.innerHTML = `
+            <div class="status-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+              <div>
+                <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 0.25rem;">Plan</p>
+                <p style="color: var(--text); font-size: 1.1rem; font-weight: 600; word-break: break-word;">${plan}</p>
+              </div>
+              <div>
+                <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 0.25rem;">Status</p>
+                <p style="color: var(--text); font-size: 1.1rem; font-weight: 600; word-break: break-word;">${status}</p>
+              </div>
+              <div>
+                <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 0.25rem;">Period End</p>
+                <p style="color: var(--text); font-size: 1.1rem; font-weight: 600; word-break: break-word;">${periodEnd}</p>
+              </div>
+              <div>
+                <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 0.25rem;">Service</p>
+                <p style="color: ${serviceEnabled ? 'var(--green)' : '#ff3b30'}; font-size: 1.1rem; font-weight: 600; word-break: break-word;">
+                  ${serviceEnabled ? 'Active' : 'Stopped'}
+                </p>
+              </div>
+            </div>
+          `;
+
+          noSubscription.style.display = 'none';
+          hasSubscription.style.display = 'block';
+
+          // Show/hide plan change buttons based on current plan
+          if (plan === 'monthly') {
+            // Current plan is monthly - hide "Switch to Monthly", show "Upgrade to Lifetime"
+            switchMonthlyBtn.style.display = 'none';
+            upgradeLifetimeBtn.style.display = 'block';
+          } else if (plan === 'lifetime') {
+            // Current plan is lifetime - show "Switch to Monthly", hide "Upgrade to Lifetime"
+            switchMonthlyBtn.style.display = 'block';
+            upgradeLifetimeBtn.style.display = 'none';
+          } else {
+            // Unknown plan - show both buttons
+            switchMonthlyBtn.style.display = 'block';
+            upgradeLifetimeBtn.style.display = 'block';
+          }
+
+          // Show/hide cancel/reactivate buttons
+          if (subscription.details?.cancelAtPeriodEnd) {
+            cancelBtn.style.display = 'none';
+            reactivateBtn.style.display = 'block';
+          } else {
+            cancelBtn.style.display = 'block';
+            reactivateBtn.style.display = 'none';
+          }
+
+          // Show/hide stop/start service buttons
+          if (serviceEnabled) {
+            stopServiceBtn.style.display = 'block';
+            startServiceBtn.style.display = 'none';
+          } else {
+            stopServiceBtn.style.display = 'none';
+            startServiceBtn.style.display = 'block';
+          }
+        }
+      }
+
+      async function createSubscription(planKey) {
+        const buttons = document.querySelectorAll(`button[onclick*="createSubscription('${planKey}')"]`);
+        buttons.forEach(btn => setButtonLoading(btn, true));
+
+        try {
+          const response = await fetch('/api/subscriptions/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ planKey })
+          });
+
+          const result = await response.json();
+          if (result.success && result.checkoutUrl) {
+            window.location.href = result.checkoutUrl;
+          } else {
+            buttons.forEach(btn => setButtonLoading(btn, false));
+            showError(result.error || 'Failed to create checkout session');
+          }
+        } catch (error) {
+          buttons.forEach(btn => setButtonLoading(btn, false));
+          showError('Network error. Please try again.');
+        }
+      }
+
+      async function changeSubscription(planKey) {
+        const button = planKey === 'monthly' 
+          ? document.getElementById('switch-monthly-btn')
+          : document.getElementById('upgrade-lifetime-btn');
+        setButtonLoading(button, true);
+
+        try {
+          const response = await fetch('/api/subscriptions/change', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ planKey })
+          });
+
+          const result = await response.json();
+          if (result.success) {
+            if (result.checkoutUrl) {
+              window.location.href = result.checkoutUrl;
+            } else {
+              setButtonLoading(button, false);
+              showSuccess(result.message || 'Subscription updated successfully');
+              loadSubscriptionStatus();
+            }
+          } else {
+            setButtonLoading(button, false);
+            showError(result.error || 'Failed to change subscription');
+          }
+        } catch (error) {
+          setButtonLoading(button, false);
+          showError('Network error. Please try again.');
+        }
+      }
+
+      async function cancelSubscription() {
+        if (!confirm('Are you sure you want to cancel your subscription? It will remain active until the end of the current period.')) {
+          return;
+        }
+
+        const button = document.getElementById('cancel-btn');
+        setButtonLoading(button, true);
+
+        try {
+          const response = await fetch('/api/subscriptions/cancel', {
+            method: 'POST'
+          });
+
+          const result = await response.json();
+          setButtonLoading(button, false);
+          if (result.success) {
+            showSuccess(result.message || 'Subscription will be canceled at period end');
+            loadSubscriptionStatus();
+          } else {
+            showError(result.error || 'Failed to cancel subscription');
+          }
+        } catch (error) {
+          setButtonLoading(button, false);
+          showError('Network error. Please try again.');
+        }
+      }
+
+      async function reactivateSubscription() {
+        const button = document.getElementById('reactivate-btn');
+        setButtonLoading(button, true);
+
+        try {
+          const response = await fetch('/api/subscriptions/reactivate', {
+            method: 'POST'
+          });
+
+          const result = await response.json();
+          setButtonLoading(button, false);
+          if (result.success) {
+            showSuccess(result.message || 'Subscription reactivated successfully');
+            loadSubscriptionStatus();
+          } else {
+            showError(result.error || 'Failed to reactivate subscription');
+          }
+        } catch (error) {
+          setButtonLoading(button, false);
+          showError('Network error. Please try again.');
+        }
+      }
+
+      async function stopService() {
+        if (!confirm('Are you sure you want to stop the service? All activation codes will be disabled immediately.')) {
+          return;
+        }
+
+        const button = document.getElementById('stop-service-btn');
+        setButtonLoading(button, true);
+
+        try {
+          const response = await fetch('/api/subscriptions/stop-service', {
+            method: 'POST'
+          });
+
+          const result = await response.json();
+          setButtonLoading(button, false);
+          if (result.success) {
+            showSuccess(result.message || 'Service stopped successfully');
+            loadSubscriptionStatus();
+          } else {
+            showError(result.error || 'Failed to stop service');
+          }
+        } catch (error) {
+          setButtonLoading(button, false);
+          showError('Network error. Please try again.');
+        }
+      }
+
+      async function startService() {
+        const button = document.getElementById('start-service-btn');
+        setButtonLoading(button, true);
+
+        try {
+          const response = await fetch('/api/subscriptions/start-service', {
+            method: 'POST'
+          });
+
+          const result = await response.json();
+          setButtonLoading(button, false);
+          if (result.success) {
+            showSuccess(result.message || 'Service started successfully');
+            loadSubscriptionStatus();
+          } else {
+            if (result.expired) {
+              if (confirm(result.error + ' Would you like to purchase a new subscription?')) {
+                // Show subscription options
+                document.getElementById('no-subscription').style.display = 'block';
+                document.getElementById('has-subscription').style.display = 'none';
+              }
+            } else {
+              showError(result.error || 'Failed to start service');
+            }
+          }
+        } catch (error) {
+          setButtonLoading(button, false);
+          showError('Network error. Please try again.');
+        }
+      }
+
+      async function deleteSubscription() {
+        const button = document.getElementById('delete-subscription-btn');
+        
+        // Confirm deletion - this is a destructive action
+        const confirmed = confirm(
+          '⚠️ WARNING: This will permanently delete your subscription and ALL activation codes.\n\n' +
+          'This action cannot be undone. You will need to purchase a new subscription to continue using the service.\n\n' +
+          'Are you sure you want to delete your subscription?'
+        );
+        
+        if (!confirmed) {
+          return;
+        }
+
+        // Double confirmation
+        const doubleConfirmed = confirm(
+          'This is your last chance to cancel. Are you absolutely sure?'
+        );
+        
+        if (!doubleConfirmed) {
+          return;
+        }
+
+        setButtonLoading(button, true);
+
+        try {
+          const response = await fetch('/api/subscriptions/delete', {
+            method: 'DELETE'
+          });
+
+          const result = await response.json();
+          setButtonLoading(button, false);
+          
+          if (result.success) {
+            showSuccess(result.message || 'Subscription and all activation codes have been deleted.');
+            // Reload subscription status - should show no subscription
+            setTimeout(() => {
+              loadSubscriptionStatus();
+            }, 1000);
+          } else {
+            showError(result.error || 'Failed to delete subscription');
+          }
+        } catch (error) {
+          setButtonLoading(button, false);
+          showError('Network error. Please try again.');
+        }
+      }
+
+      function showError(message) {
+        const errorDiv = document.getElementById('error-message');
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+        setTimeout(() => errorDiv.style.display = 'none', 5000);
+      }
+
+      function showSuccess(message) {
+        const successDiv = document.getElementById('success-message');
+        successDiv.textContent = message;
+        successDiv.style.display = 'block';
+        setTimeout(() => successDiv.style.display = 'none', 5000);
+      }
+
+      document.getElementById('logout-btn').addEventListener('click', async () => {
+        await fetch('/api/users/logout', { method: 'POST' });
+        window.location.href = '/';
+      });
+
+      loadSubscriptionStatus();
+    </script>
+  </body>
+</html>
+
+

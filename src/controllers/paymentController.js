@@ -7,116 +7,95 @@ const { v4: uuidv4 } = require('uuid');
 
 const createCheckoutSession = async (req, res, next) => {
   try {
-    const { planId = 'monthly', email } = req.body;
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required' });
+    // Support both planKey (planId) and priceId, and customerEmail
+    const { planKey, planId, priceId, customerEmail, email } = req.body;
+    
+    // Use customerEmail if provided, otherwise fallback to email
+    const finalEmail = customerEmail || email;
+    if (!finalEmail) {
+      return res.status(400).json({ error: 'customerEmail or email is required' });
     }
-    const plan = await getPlanOrThrow(planId);
 
-    // Check if Stripe is configured and get/create price
-    if (hasStripeConfig() && stripe) {
-      try {
-        // Auto-create price if not exists
-        const priceId = await getPriceId(planId);
-        
-        if (priceId) {
-          // Use Stripe Checkout
-          const session = await stripe.checkout.sessions.create({
-            mode: 'payment',
-            payment_method_types: ['card'],
-            customer_email: email,
-            metadata: { 
-              planId,
-              email: email.toLowerCase().trim()
-            },
-            line_items: [{ 
-              price: priceId, 
-              quantity: 1 
-            }],
-            success_url: `${process.env.APP_BASE_URL || (req.protocol + '://localhost:3334')}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.APP_BASE_URL || (req.protocol + '://localhost:3334')}/payment/cancel`
-          });
+    let finalPlanId = planKey || planId;
+    let finalPriceId = priceId;
 
-          return res.json({
-            success: true,
-            sessionId: session.id,
-            publishableKey: process.env.STRIPE_PUBLISHABLE_KEY
-          });
+    // If priceId is provided, use it directly
+    // Otherwise, use planKey/planId to get/create price
+    if (!finalPriceId) {
+      if (!finalPlanId) {
+        return res.status(400).json({ error: 'planKey (or planId) or priceId is required' });
+      }
+      const plan = await getPlanOrThrow(finalPlanId);
+      // Auto-create price if not exists
+      finalPriceId = await getPriceId(finalPlanId);
+      if (!finalPriceId) {
+        throw new Error(`Failed to get/create price for plan: ${finalPlanId}`);
+      }
+    } else {
+      // If priceId is provided, we still need planId for metadata
+      // Try to get planId from price metadata or use provided planKey
+      if (!finalPlanId) {
+        try {
+          const price = await stripe.prices.retrieve(finalPriceId);
+          finalPlanId = price.metadata?.planId || 'monthly'; // Default to monthly if not found
+        } catch (err) {
+          // If can't retrieve price, default to monthly
+          finalPlanId = 'monthly';
         }
-      } catch (stripeError) {
-        console.error('❌ Stripe error, falling back to manual mode:', stripeError.message);
-        // Fall through to manual mode
       }
     }
 
-    // Fallback to manual mode (no Stripe configured)
-    // Create activation record
-    const fakeSessionId = `manual_${uuidv4()}`;
-    const activation = await createActivationRecord({
-      email,
-      planId,
-      stripeSessionId: fakeSessionId
-    });
+    // Check if Stripe is configured
+    if (!hasStripeConfig() || !stripe) {
+      return res.status(400).json({ error: 'Stripe is not configured' });
+    }
 
-    // Create transaction record
-    await createManualTransaction({
-      email,
-      planId,
-      activationCode: activation.activationCode,
-      amountTotal: plan.price * 100, // Convert to cents
-      currency: 'usd'
-    });
+    try {
+      // Create Stripe Checkout Session
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        payment_method_types: ['card'],
+        customer_email: finalEmail.toLowerCase().trim(),
+        metadata: { 
+          planId: finalPlanId,
+          email: finalEmail.toLowerCase().trim()
+        },
+        line_items: [{ 
+          price: finalPriceId, 
+          quantity: 1 
+        }],
+        success_url: `${process.env.APP_BASE_URL || (req.protocol + '://' + req.get('host'))}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.APP_BASE_URL || (req.protocol + '://' + req.get('host'))}/payment/cancel`
+      });
 
-    // Send activationCodeHash to user (not plain code)
-    await sendActivationEmail({
-      to: activation.email,
-      activationCode: activation.activationCodeHash, // Send hash instead of encrypted code
-      planLabel: plan.label,
-      expiresAt: activation.expiresAt
-    });
+      console.log('✅ Checkout session created:', {
+        sessionId: session.id,
+        planId: finalPlanId,
+        priceId: finalPriceId,
+        email: finalEmail
+      });
 
-    return res.json({
-      success: true,
-      message: 'Activation code sent to your email',
-      activationCodeHash: activation.activationCodeHash // Return hash only
-    });
+      return res.json({
+        success: true,
+        checkoutUrl: session.url, // Stripe checkout URL
+        sessionId: session.id,
+        planId: finalPlanId,
+        priceId: finalPriceId
+      });
+    } catch (stripeError) {
+      console.error('❌ Stripe error:', stripeError.message);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to create checkout session: ' + stripeError.message
+      });
+    }
   } catch (err) {
     console.error('❌ Payment error:', err);
-    
-    // Don't expose internal errors to customers
-    if (err.code === 11000) {
-      // Duplicate key error - try to get existing activation
-      try {
-        const Activation = require('../models/Activation');
-        const existingActivation = await Activation.findOne({ 
-          email: email.toLowerCase().trim() 
-        }).sort({ createdAt: -1 });
-        
-        if (existingActivation) {
-          // Resend email if activation exists (use hash if available)
-          const codeToSend = existingActivation.activationCodeHash || existingActivation.activationCode;
-          await sendActivationEmail({
-            to: existingActivation.email,
-            activationCode: codeToSend,
-            planLabel: plan.label,
-            expiresAt: existingActivation.expiresAt
-          });
-          
-          return res.json({
-            success: true,
-            message: 'Activation code sent to your email',
-            activationCodeHash: codeToSend
-          });
-        }
-      } catch (retryErr) {
-        console.error('Retry error:', retryErr);
-      }
-    }
     
     // Generic error message for customers
     return res.status(500).json({
       success: false,
-      error: 'Unable to process your order. Please try again or contact support.'
+      error: 'Unable to create checkout session. Please try again or contact support.'
     });
   }
 };
@@ -247,10 +226,139 @@ const processPaymentSession = async (session) => {
 };
 
 const handleStripeWebhook = async (event) => {
+  const { handleCheckoutSessionCompleted, handleSubscriptionWebhook } = require('../services/subscriptionService');
+
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object;
-      await processPaymentSession(session);
+      
+      // Check if this is a subscription checkout (has userId in metadata)
+      if (session.metadata?.userId) {
+        // This is a subscription checkout for a logged-in user
+        await handleCheckoutSessionCompleted(session);
+      } else {
+        // This is a legacy activation code checkout
+        await processPaymentSession(session);
+      }
+      break;
+    }
+    case 'customer.subscription.created':
+    case 'customer.subscription.updated':
+    case 'customer.subscription.deleted': {
+      const subscription = event.data.object;
+      await handleSubscriptionWebhook(subscription);
+      break;
+    }
+    case 'invoice.payment_succeeded': {
+      // Handle subscription renewal - subscription is automatically renewed
+      const invoice = event.data.object;
+      if (invoice.subscription) {
+        try {
+          const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+          await handleSubscriptionWebhook(subscription);
+          console.log('✅ Subscription renewed - activation updated:', {
+            subscriptionId: subscription.id,
+            invoiceId: invoice.id
+          });
+        } catch (err) {
+          console.error('❌ Error handling renewal webhook:', err.message);
+        }
+      }
+      break;
+    }
+    case 'invoice.payment_failed': {
+      // Handle failed payment - subscription may become past_due or unpaid
+      const invoice = event.data.object;
+      if (invoice.subscription) {
+        try {
+          const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+          await handleSubscriptionWebhook(subscription);
+          console.log('⚠️ Subscription payment failed - activation status updated:', {
+            subscriptionId: subscription.id,
+            invoiceId: invoice.id,
+            status: subscription.status
+          });
+        } catch (err) {
+          console.error('❌ Error handling payment failed webhook:', err.message);
+        }
+      }
+      break;
+    }
+    case 'checkout.session.async_payment_failed':
+    case 'payment_intent.payment_failed': {
+      // Handle failed payment - create invalid activation code for testing
+      let session = null;
+      let customerEmail = null;
+      let planId = null;
+
+      if (event.type === 'checkout.session.async_payment_failed') {
+        session = event.data.object;
+        customerEmail = session.customer_details?.email || session.customer_email || session.metadata?.email;
+        planId = session.metadata?.planId;
+      } else if (event.type === 'payment_intent.payment_failed') {
+        const paymentIntent = event.data.object;
+        // Try to get session from payment intent metadata
+        if (paymentIntent.metadata?.sessionId) {
+          try {
+            session = await stripe.checkout.sessions.retrieve(paymentIntent.metadata.sessionId);
+            customerEmail = session.customer_details?.email || session.customer_email || session.metadata?.email;
+            planId = session.metadata?.planId;
+          } catch (err) {
+            console.warn('⚠️ Could not retrieve session from payment intent:', err.message);
+          }
+        }
+      }
+
+      // Create invalid activation code for testing payment failure scenario
+      if (customerEmail && planId) {
+        try {
+          const Activation = require('../models/Activation');
+          const { hashActivationCode } = require('../utils/cryptoUtils');
+          const { v4: uuidv4 } = require('uuid');
+          const { getPlanOrThrow } = require('../utils/planConfig');
+
+          // Check if activation already exists for this session
+          const existingActivation = session?.id 
+            ? await Activation.findOne({ stripeSessionId: session.id })
+            : null;
+
+          if (!existingActivation) {
+            // Generate activation code
+            const plainCode = uuidv4().replace(/-/g, '').slice(0, 16).toUpperCase();
+            const codeHash = hashActivationCode(plainCode);
+
+            // Get plan to calculate expiry
+            const plan = await getPlanOrThrow(planId);
+            let expiresAt = null;
+            if (planId === 'monthly') {
+              expiresAt = new Date();
+              expiresAt.setDate(expiresAt.getDate() + 30);
+            }
+
+            // Create activation with status 'revoked' (invalid due to payment failure)
+            const activation = await Activation.create({
+              email: customerEmail.toLowerCase().trim(),
+              plan: planId,
+              activationCodeHash: codeHash,
+              activationCode: plainCode,
+              status: 'revoked', // Invalid status due to payment failure
+              expiresAt,
+              stripeSessionId: session?.id || null,
+              stripeCustomerId: session?.customer || null
+            });
+
+            console.log('⚠️ Invalid activation code created (payment failed):', {
+              email: activation.email,
+              plan: activation.plan,
+              status: activation.status,
+              sessionId: session?.id,
+              activationCodeHash: codeHash.substring(0, 8) + '...'
+            });
+          }
+        } catch (err) {
+          console.error('❌ Error creating invalid activation for failed payment:', err.message);
+        }
+      }
       break;
     }
     default:

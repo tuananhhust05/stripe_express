@@ -6,9 +6,27 @@ const router = express.Router();
 
 router.get('/', async (req, res) => {
   const plans = await getPlans();
+  let user = null;
+  
+  // Check if user is logged in
+  try {
+    const { getUserTokenFromCookie, verifyUserToken } = require('../utils/jwt');
+    const User = require('../models/User');
+    const token = getUserTokenFromCookie(req);
+    if (token) {
+      const { valid, payload } = verifyUserToken(token);
+      if (valid && payload) {
+        user = await User.findById(payload.userId).select('-password');
+      }
+    }
+  } catch (err) {
+    // Ignore errors, just don't set user
+  }
+  
   res.render('landing', {
     title: 'Shadow Link',
     plans,
+    user,
     stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY
   });
 });
@@ -19,6 +37,87 @@ router.get('/payment', async (req, res) => {
     title: 'Shadow Link - Payment',
     plans,
     stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY
+  });
+});
+
+// User authentication pages
+router.get('/login', (req, res) => {
+  res.render('login', {
+    title: 'Login - Shadow Link'
+  });
+});
+
+router.get('/register', (req, res) => {
+  res.render('register', {
+    title: 'Register - Shadow Link'
+  });
+});
+
+// Subscription management pages (protected)
+const { requireUser } = require('../middleware/userAuth');
+router.get('/subscription', requireUser, async (req, res) => {
+  res.render('subscription', {
+    title: 'Subscription - Shadow Link',
+    user: req.user
+  });
+});
+
+router.get('/subscription/success', async (req, res) => {
+  const { session_id } = req.query;
+  let subscriptionData = null;
+  let user = null;
+
+  // First check if user is already logged in (has session cookie)
+  if (req.user) {
+    user = req.user;
+  }
+
+  if (session_id && session_id.startsWith('cs_')) {
+    try {
+      const { stripe } = require('../services/stripeService');
+      if (stripe) {
+        const session = await stripe.checkout.sessions.retrieve(session_id);
+        const { handleCheckoutSessionCompleted } = require('../services/subscriptionService');
+        await handleCheckoutSessionCompleted(session);
+        
+        subscriptionData = {
+          sessionId: session.id,
+          mode: session.mode,
+          status: session.status,
+          paymentStatus: session.payment_status
+        };
+
+        // If user not found from session cookie, try to get from session metadata or customer
+        if (!user) {
+          if (session.metadata?.userId) {
+            const User = require('../models/User');
+            user = await User.findById(session.metadata.userId).select('-password');
+          } else if (session.customer) {
+            const User = require('../models/User');
+            user = await User.findOne({ stripeCustomerId: session.customer }).select('-password');
+          }
+        }
+
+        // If user found and logged in, redirect to subscription page immediately
+        if (user && req.user) {
+          return res.redirect('/subscription');
+        }
+      }
+    } catch (err) {
+      console.error('❌ Error processing subscription success:', err);
+    }
+  }
+
+  res.render('subscription-success', {
+    title: 'Subscription Success - Shadow Link',
+    subscriptionData,
+    user
+  });
+});
+
+router.get('/subscription/cancel', (req, res) => {
+  res.render('subscription-cancel', {
+    title: 'Subscription Canceled - Shadow Link'
   });
 });
 

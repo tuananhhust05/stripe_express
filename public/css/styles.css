@@ -92,6 +92,7 @@ body {
   align-items: center;
   padding: 0 6rem;
   height: 72px;
+  /* overflow: hidden; */
   background: rgba(0, 0, 0, 0.95);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
@@ -110,6 +111,8 @@ body {
 
 .nav__brand {
   display: inline-flex;
+  height: 72px;
+  overflow: hidden;
   align-items: center;
   gap: 0.5rem;
   text-decoration: none;
@@ -174,6 +177,99 @@ body {
 
 .nav__items a:hover {
   color: #ffffff;
+}
+
+.nav__actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nav__auth-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.nav__user-menu {
+  position: relative;
+}
+
+.nav__user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.nav__user-info:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nav__user-email {
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.nav__user-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--muted);
+  border: 1px solid var(--border-light);
+}
+
+.nav__user-badge.active {
+  background: rgba(52, 199, 89, 0.2);
+  color: var(--green);
+  border-color: rgba(52, 199, 89, 0.3);
+}
+
+.nav__user-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 0.5rem 0;
+  min-width: 200px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+  z-index: 100;
+}
+
+.nav__user-menu:hover .nav__user-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.nav__user-link {
+  display: block;
+  padding: 0.75rem 1rem;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background 0.2s ease;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.nav__user-link:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .nav__menu {
@@ -1267,6 +1363,31 @@ tbody tr:hover {
 }
 
 @media (max-width: 768px) {
+  .nav__auth-buttons {
+    gap: 0.5rem;
+  }
+
+  .nav__auth-buttons .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.7rem;
+  }
+
+  .nav__user-menu {
+    display: none;
+  }
+
+  .nav__user-info {
+    padding: 0.4rem 0.75rem;
+  }
+
+  .nav__user-email {
+    font-size: 0.75rem;
+  }
+
+  .nav__user-badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+  }
   .nav__links,
   .nav__cta {
     display: none;

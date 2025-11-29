@@ -61,18 +61,22 @@ const getOrCreatePrice = async (plan) => {
       limit: 100
     });
 
-    // Find price with matching amount
+    // Find price with matching amount and correct type
     const priceAmount = plan.price * 100; // Convert to cents
+    const expectedPriceType = plan.id === 'monthly' ? 'recurring' : 'one_time';
+    
     let price = prices.data.find(p => 
       p.unit_amount === priceAmount && 
       p.currency === 'usd' && 
-      p.type === 'one_time'
+      p.type === expectedPriceType &&
+      (expectedPriceType === 'one_time' || (p.recurring && p.recurring.interval === 'month'))
     );
 
     // Create price if not exists
     if (!price) {
-      console.log(`💰 Creating Stripe price: ${productName} - $${plan.price}`);
-      price = await stripe.prices.create({
+      console.log(`💰 Creating Stripe ${expectedPriceType} price: ${productName} - $${plan.price}`);
+      
+      const priceData = {
         product: product.id,
         unit_amount: priceAmount,
         currency: 'usd',
@@ -80,7 +84,16 @@ const getOrCreatePrice = async (plan) => {
           planId: plan.id,
           source: 'auto-created'
         }
-      });
+      };
+
+      // For monthly plan, create recurring price
+      if (plan.id === 'monthly') {
+        priceData.recurring = {
+          interval: 'month'
+        };
+      }
+
+      price = await stripe.prices.create(priceData);
     }
 
     // Cache the price ID

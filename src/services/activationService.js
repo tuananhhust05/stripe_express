@@ -16,7 +16,7 @@ const createActivationRecord = async ({
   stripeSubscriptionStatus = null,
   stripeCurrentPeriodEnd = null
 }) => {
-  const plan = getPlanOrThrow(planId);
+  const plan = await getPlanOrThrow(planId);
   const expiresAt = plan.durationDays ? new Date(Date.now() + plan.durationDays * DAY_IN_MS) : null;
 
   const existing = await Activation.findOne({ stripeSessionId });
@@ -103,12 +103,209 @@ const verifyActivation = async (activationCode, deviceId = null) => {
     return { ok: false, reason: 'revoked' };
   }
 
-  // Get Stripe session to validate payment status and expiry
-  let stripeSession = null;
-  if (activation.stripeSessionId && stripe) {
+  // Sync plan from user/subscription before verification
+  // This ensures activation.plan matches current subscription plan
+  if (activation.stripeCustomerId) {
     try {
-      stripeSession = await stripe.checkout.sessions.retrieve(activation.stripeSessionId);
-      console.log('📋 Retrieved Stripe session for verification:', {
+      const User = require('../models/User');
+      const user = await User.findOne({ stripeCustomerId: activation.stripeCustomerId });
+      
+      if (user && user.subscriptionPlan && user.subscriptionPlan !== activation.plan) {
+        // User's plan has changed - update activation
+        console.log('🔄 Syncing activation plan from user:', {
+          activationId: activation._id,
+          oldPlan: activation.plan,
+          newPlan: user.subscriptionPlan
+        });
+        activation.plan = user.subscriptionPlan;
+        if (user.subscriptionPlan === 'lifetime') {
+          activation.expiresAt = null;
+        }
+        await activation.save();
+      }
+    } catch (err) {
+      console.warn('⚠️ Could not sync plan from user:', err.message);
+    }
+  }
+
+  // Priority 1: Verify via subscription (new subscription-based model)
+  let subscriptionValid = false;
+  let subscriptionData = null;
+  
+  if (activation.stripeSubscriptionId && stripe) {
+    try {
+      const subscription = await stripe.subscriptions.retrieve(activation.stripeSubscriptionId);
+      subscriptionData = subscription;
+      
+      // Get plan from subscription metadata (may be updated after upgrade)
+      const subscriptionPlanId = subscription.metadata?.planId || 
+                                 subscription.items.data[0]?.price?.metadata?.planId || 
+                                 activation.plan;
+      
+      console.log('📋 Retrieved Stripe subscription for verification:', {
+        subscriptionId: activation.stripeSubscriptionId,
+        status: subscription.status,
+        planId: subscriptionPlanId,
+        activationPlan: activation.plan
+      });
+      
+      // Sync plan from subscription metadata if different
+      if (subscriptionPlanId && subscriptionPlanId !== activation.plan) {
+        console.log('🔄 Syncing activation plan from subscription metadata:', {
+          activationId: activation._id,
+          oldPlan: activation.plan,
+          newPlan: subscriptionPlanId
+        });
+        activation.plan = subscriptionPlanId;
+        if (subscriptionPlanId === 'lifetime') {
+          activation.expiresAt = null;
+        } else if (subscriptionPlanId === 'monthly' && subscription.current_period_end) {
+          // For monthly, set expiresAt to current_period_end
+          activation.expiresAt = new Date(subscription.current_period_end * 1000);
+        }
+        await activation.save();
+      }
+      
+      // Also sync from user.subscriptionPlan if available (more reliable)
+      if (activation.stripeCustomerId) {
+        try {
+          const User = require('../models/User');
+          const user = await User.findOne({ stripeCustomerId: activation.stripeCustomerId });
+          if (user && user.subscriptionPlan && user.subscriptionPlan !== activation.plan) {
+            console.log('🔄 Syncing activation plan from user.subscriptionPlan:', {
+              activationId: activation._id,
+              oldPlan: activation.plan,
+              newPlan: user.subscriptionPlan
+            });
+            activation.plan = user.subscriptionPlan;
+            if (user.subscriptionPlan === 'lifetime') {
+              activation.expiresAt = null;
+            } else if (user.subscriptionPlan === 'monthly' && subscription.current_period_end) {
+              activation.expiresAt = new Date(subscription.current_period_end * 1000);
+            }
+            await activation.save();
+          }
+        } catch (err) {
+          console.warn('⚠️ Could not sync plan from user:', err.message);
+        }
+      }
+      
+      // Check subscription status - must be active, trialing, or past_due (still valid)
+      const validStatuses = ['active', 'trialing', 'past_due'];
+      if (!validStatuses.includes(subscription.status)) {
+        // If subscription is canceled but activation was revoked, return expired
+        if (subscription.status === 'canceled' && activation.status === 'revoked') {
+          return { 
+            ok: false, 
+            reason: 'expired', 
+            message: 'Activation code has been revoked due to subscription cancellation.' 
+          };
+        }
+        return { 
+          ok: false, 
+          reason: 'subscription_inactive', 
+          message: `Subscription is ${subscription.status}. Activation code is not valid.` 
+        };
+      }
+      
+      // If activation status is revoked but subscription is active, reactivate it
+      if (activation.status === 'revoked' && validStatuses.includes(subscription.status)) {
+        activation.status = 'active';
+        await activation.save();
+        console.log('✅ Activation reactivated - subscription is active again:', {
+          activationId: activation._id,
+          subscriptionStatus: subscription.status
+        });
+      }
+      
+      // Update activation record with latest subscription info
+      activation.stripeSubscriptionStatus = subscription.status;
+      if (subscription.current_period_end) {
+        activation.stripeCurrentPeriodEnd = new Date(subscription.current_period_end * 1000);
+        // For monthly subscriptions, expiresAt = current_period_end
+        if (activation.plan === 'monthly') {
+          activation.expiresAt = activation.stripeCurrentPeriodEnd;
+        }
+      }
+      await activation.save();
+      
+      subscriptionValid = true;
+      
+      // Check if service is enabled in Stripe subscription metadata
+      const serviceEnabled = subscription.metadata?.serviceEnabled;
+      if (serviceEnabled === 'false') {
+        return { 
+          ok: false, 
+          reason: 'service_disabled', 
+          message: 'Service is currently disabled. Please contact support.' 
+        };
+      }
+      
+      // Check expiry for monthly plans
+      if (activation.plan === 'monthly' && activation.expiresAt && activation.expiresAt < new Date()) {
+        return { ok: false, reason: 'expired', message: 'Subscription period has ended' };
+      }
+      
+      // Lifetime plans never expire
+      if (activation.plan === 'lifetime') {
+        activation.expiresAt = null;
+        await activation.save();
+      }
+    } catch (err) {
+      console.error('❌ Error retrieving Stripe subscription:', {
+        error: err.message,
+        subscriptionId: activation.stripeSubscriptionId,
+        type: err.type
+      });
+      // If subscription retrieval fails, fall back to session-based or expiry check
+    }
+  }
+  
+  // Priority 2: Verify via User subscription (if linked to user account)
+  if (!subscriptionValid && activation.stripeCustomerId) {
+    try {
+      const User = require('../models/User');
+      const user = await User.findOne({ stripeCustomerId: activation.stripeCustomerId });
+      
+      if (user && user.subscriptionId && user.subscriptionStatus === 'active') {
+        // User has active subscription - verify it matches
+        if (user.subscriptionId === activation.stripeSubscriptionId || !activation.stripeSubscriptionId) {
+          // Update activation with user's subscription info
+          if (!activation.stripeSubscriptionId && user.subscriptionId) {
+            activation.stripeSubscriptionId = user.subscriptionId;
+            activation.stripeSubscriptionStatus = user.subscriptionStatus;
+            activation.stripeCurrentPeriodEnd = user.subscriptionCurrentPeriodEnd;
+            if (activation.plan === 'monthly' && user.subscriptionCurrentPeriodEnd) {
+              activation.expiresAt = user.subscriptionCurrentPeriodEnd;
+            }
+            await activation.save();
+          }
+          
+          subscriptionValid = true;
+          
+          // Check expiry for monthly plans
+          if (activation.plan === 'monthly' && activation.expiresAt && activation.expiresAt < new Date()) {
+            return { ok: false, reason: 'expired', message: 'Subscription period has ended' };
+          }
+        }
+      } else if (user && (!user.subscriptionId || user.subscriptionStatus !== 'active')) {
+        // User subscription is not active
+        return { 
+          ok: false, 
+          reason: 'subscription_inactive', 
+          message: 'User subscription is not active' 
+        };
+      }
+    } catch (err) {
+      console.error('❌ Error checking user subscription:', err.message);
+    }
+  }
+  
+  // Priority 3: Fallback to session-based verification (legacy support)
+  if (!subscriptionValid && activation.stripeSessionId && stripe) {
+    try {
+      const stripeSession = await stripe.checkout.sessions.retrieve(activation.stripeSessionId);
+      console.log('📋 Fallback: Retrieved Stripe session for verification:', {
         sessionId: activation.stripeSessionId,
         paymentStatus: stripeSession.payment_status,
         planId: stripeSession.metadata?.planId
@@ -152,16 +349,29 @@ const verifyActivation = async (activationCode, deviceId = null) => {
         sessionId: activation.stripeSessionId,
         type: err.type
       });
-      // If Stripe session retrieval fails, fall back to existing expiry check
-      if (activation.expiresAt && activation.expiresAt < new Date()) {
-        return { ok: false, reason: 'expired' };
+    }
+  }
+  
+  // Check service enabled status for lifetime plans or when no subscription
+  if (!subscriptionValid && activation.stripeCustomerId && stripe) {
+    try {
+      const customer = await stripe.customers.retrieve(activation.stripeCustomerId);
+      const serviceEnabled = customer.metadata?.serviceEnabled;
+      if (serviceEnabled === 'false') {
+        return { 
+          ok: false, 
+          reason: 'service_disabled', 
+          message: 'Service is currently disabled. Please contact support.' 
+        };
       }
+    } catch (err) {
+      console.warn('⚠️ Could not retrieve customer to check service status:', err.message);
     }
-  } else {
-    // Fallback: check existing expiry if no Stripe session
-    if (activation.expiresAt && activation.expiresAt < new Date()) {
-      return { ok: false, reason: 'expired' };
-    }
+  }
+
+  // Final fallback: check existing expiry if no Stripe verification possible
+  if (!subscriptionValid && activation.expiresAt && activation.expiresAt < new Date()) {
+    return { ok: false, reason: 'expired', message: 'Activation code has expired' };
   }
 
   // deviceId is required
@@ -186,26 +396,22 @@ const verifyActivation = async (activationCode, deviceId = null) => {
     });
   }
 
-  // Prepare session data for response
-  const sessionData = stripeSession ? {
-    id: stripeSession.id,
-    object: stripeSession.object,
-    mode: stripeSession.mode,
-    status: stripeSession.status,
-    payment_status: stripeSession.payment_status,
-    customer: stripeSession.customer,
-    customer_email: stripeSession.customer_email,
-    customer_details: stripeSession.customer_details,
-    subscription: stripeSession.subscription,
-    payment_intent: stripeSession.payment_intent,
-    metadata: stripeSession.metadata,
-    amount_total: stripeSession.amount_total,
-    currency: stripeSession.currency,
-    created: stripeSession.created ? new Date(stripeSession.created * 1000).toISOString() : null,
-    expires_at: stripeSession.expires_at ? new Date(stripeSession.expires_at * 1000).toISOString() : null,
-    payment_method_types: stripeSession.payment_method_types,
-    success_url: stripeSession.success_url,
-    cancel_url: stripeSession.cancel_url
+  // Prepare subscription/session data for response
+  // Use activation.plan as source of truth (already synced from user/subscription)
+  // For lifetime plan, always return status as "active" regardless of actual subscription status
+  let finalSubscriptionStatus = activation.stripeSubscriptionStatus;
+  if (activation.plan === 'lifetime') {
+    // Lifetime plan should always show as "active" status
+    finalSubscriptionStatus = 'active';
+  }
+  
+  const subscriptionResponse = subscriptionData ? {
+    id: subscriptionData.id,
+    status: activation.plan === 'lifetime' ? 'active' : subscriptionData.status, // Override to "active" for lifetime
+    currentPeriodStart: subscriptionData.current_period_start ? new Date(subscriptionData.current_period_start * 1000).toISOString() : null,
+    currentPeriodEnd: subscriptionData.current_period_end ? new Date(subscriptionData.current_period_end * 1000).toISOString() : null,
+    cancelAtPeriodEnd: subscriptionData.cancel_at_period_end,
+    plan: activation.plan // Use activation.plan as source of truth (already synced)
   } : null;
 
   return {
@@ -216,7 +422,9 @@ const verifyActivation = async (activationCode, deviceId = null) => {
       expiresAt: activation.expiresAt,
       deviceId: activation.redeemedDeviceId,
       redeemedAt: activation.redeemedAt,
-      session: sessionData
+      subscription: subscriptionResponse,
+      subscriptionId: activation.stripeSubscriptionId,
+      subscriptionStatus: finalSubscriptionStatus // Always "active" for lifetime plan
     }
   };
 };

@@ -239,7 +239,7 @@ const resendActivationEmail = async (req, res, next) => {
     }
 
     // Get plan label
-    const plan = getPlanOrThrow(activation.plan);
+    const plan = await getPlanOrThrow(activation.plan);
     const planLabel = plan.label;
 
     // Send email
@@ -404,14 +404,190 @@ const updatePlanPrice = async (req, res, next) => {
   }
 };
 
-module.exports = { 
-  adminLogin, 
-  adminLogout, 
-  getAdminStats, 
-  getAdminTransactions, 
+/**
+ * Create test activation code (invalid/revoked) for testing payment failure scenarios
+ */
+const createTestActivation = async (req, res, next) => {
+  try {
+    const { email, plan = 'monthly' } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email is required'
+      });
+    }
+
+    if (!['monthly', 'lifetime'].includes(plan)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Plan must be monthly or lifetime'
+      });
+    }
+
+    const Activation = require('../models/Activation');
+    const { hashActivationCode } = require('../utils/cryptoUtils');
+    const { v4: uuidv4 } = require('uuid');
+    const { getPlanOrThrow } = require('../utils/planConfig');
+
+    // Generate activation code
+    const plainCode = uuidv4().replace(/-/g, '').slice(0, 16).toUpperCase();
+    const codeHash = hashActivationCode(plainCode);
+
+    // Get plan to calculate expiry
+    const planConfig = await getPlanOrThrow(plan);
+    let expiresAt = null;
+    if (plan === 'monthly') {
+      expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30);
+    }
+
+    // Create activation with status 'revoked' (invalid for testing)
+    const activation = await Activation.create({
+      email: email.toLowerCase().trim(),
+      plan: plan,
+      activationCodeHash: codeHash,
+      activationCode: plainCode,
+      status: 'revoked', // Invalid status for testing
+      expiresAt,
+      // No Stripe session/subscription - this is a test code
+    });
+
+    console.log('✅ Test activation code created (invalid):', {
+      email: activation.email,
+      plan: activation.plan,
+      status: activation.status,
+      activationCodeHash: codeHash.substring(0, 8) + '...'
+    });
+
+    res.json({
+      success: true,
+      message: 'Test activation code created (invalid/revoked status)',
+      activation: {
+        id: activation._id,
+        email: activation.email,
+        plan: activation.plan,
+        status: activation.status,
+        activationCode: plainCode, // Return plain code for testing
+        activationCodeHash: codeHash,
+        expiresAt: activation.expiresAt
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error creating test activation:', error);
+    next(error);
+  }
+};
+
+/**
+ * Simulate subscription payment failure for testing
+ * This will update subscription status to past_due/unpaid and revoke activations
+ */
+const simulatePaymentFailure = async (req, res, next) => {
+  try {
+    const { userId, subscriptionId } = req.body;
+
+    if (!userId && !subscriptionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Either userId or subscriptionId is required'
+      });
+    }
+
+    const User = require('../models/User');
+    const { stripe } = require('../services/stripeService');
+    const Activation = require('../models/Activation');
+
+    if (!stripe) {
+      return res.status(500).json({
+        success: false,
+        error: 'Stripe is not configured'
+      });
+    }
+
+    // Find user
+    let user;
+    if (userId) {
+      user = await User.findById(userId);
+    } else {
+      user = await User.findOne({ subscriptionId });
+    }
+
+    if (!user || !user.subscriptionId) {
+      return res.status(404).json({
+        success: false,
+        error: 'User or subscription not found'
+      });
+    }
+
+    // Update subscription in Stripe to simulate payment failure
+    // Note: In test mode, we can't actually fail a payment, but we can update metadata
+    const subscription = await stripe.subscriptions.retrieve(user.subscriptionId);
+    
+    // Update subscription metadata to mark as payment failed
+    await stripe.subscriptions.update(user.subscriptionId, {
+      metadata: {
+        ...subscription.metadata,
+        paymentFailureSimulated: 'true',
+        simulatedAt: new Date().toISOString()
+      }
+    });
+
+    // Update subscription status to past_due (simulate payment failure)
+    // Note: We can't directly change subscription status, but we can update our database
+    user.subscriptionStatus = 'past_due';
+    await user.save();
+
+    // Revoke all activation records
+    const activations = await Activation.find({
+      $or: [
+        { stripeSubscriptionId: user.subscriptionId },
+        { stripeCustomerId: user.stripeCustomerId, email: user.email }
+      ]
+    });
+
+    let revokedCount = 0;
+    for (const activation of activations) {
+      if (activation.status === 'active') {
+        activation.status = 'revoked';
+        activation.stripeSubscriptionStatus = 'past_due';
+        await activation.save();
+        revokedCount++;
+      }
+    }
+
+    console.log('⚠️ Payment failure simulated:', {
+      userId: user._id,
+      email: user.email,
+      subscriptionId: user.subscriptionId,
+      activationsRevoked: revokedCount
+    });
+
+    res.json({
+      success: true,
+      message: 'Payment failure simulated successfully. Subscription status set to past_due and activations revoked.',
+      subscription: {
+        subscriptionId: user.subscriptionId,
+        status: 'past_due',
+        activationsRevoked: revokedCount
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error simulating payment failure:', error);
+    next(error);
+  }
+};
+
+module.exports = {
+  adminLogin,
+  adminLogout,
+  getAdminStats,
+  getAdminTransactions,
   getAdminActivations,
   resendActivationEmail,
   getPlanPrices,
-  updatePlanPrice
+  updatePlanPrice,
+  createTestActivation,
+  simulatePaymentFailure
 };
 
