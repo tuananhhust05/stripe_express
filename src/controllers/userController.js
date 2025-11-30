@@ -42,10 +42,11 @@ const register = async (req, res, next) => {
     const token = generateUserToken(user._id, user.email);
 
     // Set JWT token in HTTP-only cookie
+    // Use 'lax' instead of 'strict' to allow redirect after setting cookie
     res.cookie('userToken', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax', // Changed from 'strict' to allow redirect after registration
       maxAge: 24 * 60 * 60 * 1000 // 24 hours
     });
 
@@ -105,6 +106,14 @@ const login = async (req, res, next) => {
       });
     }
 
+    // Check if user only has Google account (no password)
+    if (!user.password) {
+      return res.status(401).json({
+        success: false,
+        error: 'This account is linked to Google. Please sign in with Google.'
+      });
+    }
+
     const isValid = await user.comparePassword(password);
     if (!isValid) {
       return res.status(401).json({
@@ -121,10 +130,11 @@ const login = async (req, res, next) => {
     const token = generateUserToken(user._id, user.email);
 
     // Set JWT token in HTTP-only cookie
+    // Use 'lax' instead of 'strict' to allow redirect after setting cookie
     res.cookie('userToken', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax', // Changed from 'strict' to allow redirect after login
       maxAge: 24 * 60 * 60 * 1000 // 24 hours
     });
 
@@ -190,11 +200,61 @@ const getProfile = async (req, res, next) => {
   }
 };
 
+/**
+ * Google OAuth callback handler
+ */
+const googleCallback = async (req, res, next) => {
+  try {
+    const user = req.user;
+
+    if (!user) {
+      return res.redirect('/login?error=authentication_failed');
+    }
+
+    if (!user.isActive) {
+      return res.redirect('/login?error=account_deactivated');
+    }
+
+    // Generate JWT token
+    const token = generateUserToken(user._id, user.email);
+
+    // Set JWT token in HTTP-only cookie
+    // Use 'lax' instead of 'strict' to allow redirect after setting cookie
+    res.cookie('userToken', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax', // Changed from 'strict' to allow redirect after Google OAuth
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    });
+
+    // Check if this is a new user (just created)
+    const isNewUser = user.createdAt && (Date.now() - new Date(user.createdAt).getTime()) < 5000; // Created less than 5 seconds ago
+
+    console.log('✅ User logged in via Google:', user.email, isNewUser ? '(new user)' : '(existing user)');
+
+    // Get redirect URL from query string or session, default to /subscription
+    // This matches the behavior of email/password login which redirects to /subscription
+    const redirectUrl = req.query.redirect || (req.session && req.session.returnTo) || '/subscription';
+    
+    // Clear returnTo from session if exists
+    if (req.session && req.session.returnTo) {
+      delete req.session.returnTo;
+    }
+
+    // Redirect to subscription page (same as email/password login flow)
+    res.redirect(redirectUrl);
+  } catch (error) {
+    console.error('❌ Google callback error:', error);
+    res.redirect('/login?error=authentication_failed');
+  }
+};
+
 module.exports = {
   register,
   login,
   logout,
-  getProfile
+  getProfile,
+  googleCallback
 };
 
 

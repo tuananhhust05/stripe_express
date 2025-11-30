@@ -13,8 +13,16 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: function() {
+        return !this.googleId; // Password only required if not using Google OAuth
+      },
       minlength: 6
+    },
+    googleId: {
+      type: String,
+      sparse: true,
+      unique: true,
+      index: true
     },
     name: {
       type: String,
@@ -59,9 +67,9 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Hash password before saving
+// Hash password before saving (only if password exists and is modified)
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+  if (!this.isModified('password') || !this.password) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
@@ -73,6 +81,7 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 
 // Indexes
 userSchema.index({ email: 1 });
+userSchema.index({ googleId: 1 });
 userSchema.index({ stripeCustomerId: 1 });
 userSchema.index({ subscriptionId: 1 });
 

@@ -135,11 +135,10 @@
             <button id="upgrade-lifetime-btn" class="btn primary" onclick="changeSubscription('lifetime')" style="padding: 1rem; display: none;">Upgrade to Lifetime</button>
           </div>
           <div class="button-grid-2" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <button id="renew-btn" class="btn primary" onclick="renewSubscription()" style="padding: 1rem;">Renew Subscription</button>
             <button id="cancel-btn" class="btn ghost" onclick="cancelSubscription()" style="padding: 1rem;">Cancel Subscription</button>
             <button id="reactivate-btn" class="btn primary" onclick="reactivateSubscription()" style="padding: 1rem; display: none;">Reactivate Subscription</button>
-            <button id="stop-service-btn" class="btn" onclick="stopService()" style="padding: 1rem; display: none; background: #ff3b30; color: white;">Stop Service</button>
             <button id="start-service-btn" class="btn primary" onclick="startService()" style="padding: 1rem; display: none;">Start Service</button>
-            <button id="delete-subscription-btn" class="btn" onclick="deleteSubscription()" style="padding: 1rem; background: #ff3b30; color: white;">Delete Subscription</button>
           </div>
         </div>
       </div>
@@ -203,7 +202,6 @@
         const hasSubscription = document.getElementById('has-subscription');
         const cancelBtn = document.getElementById('cancel-btn');
         const reactivateBtn = document.getElementById('reactivate-btn');
-        const stopServiceBtn = document.getElementById('stop-service-btn');
         const startServiceBtn = document.getElementById('start-service-btn');
         const switchMonthlyBtn = document.getElementById('switch-monthly-btn');
         const upgradeLifetimeBtn = document.getElementById('upgrade-lifetime-btn');
@@ -262,20 +260,31 @@
           }
 
           // Show/hide cancel/reactivate buttons
+          // Always show cancel button when subscription exists
           if (subscription.details?.cancelAtPeriodEnd) {
-            cancelBtn.style.display = 'none';
+            cancelBtn.style.display = 'block'; // Always show cancel button
             reactivateBtn.style.display = 'block';
           } else {
-            cancelBtn.style.display = 'block';
+            cancelBtn.style.display = 'block'; // Always show cancel button
             reactivateBtn.style.display = 'none';
           }
+          
+          // Show renew button for active subscriptions (not lifetime)
+          const renewBtn = document.getElementById('renew-btn');
+          if (renewBtn) {
+            if (plan === 'lifetime') {
+              renewBtn.style.display = 'none'; // Lifetime doesn't need renewal
+            } else if (status === 'active' || status === 'trialing') {
+              renewBtn.style.display = 'block';
+            } else {
+              renewBtn.style.display = 'none';
+            }
+          }
 
-          // Show/hide stop/start service buttons
+          // Show/hide start service button (only show if service is stopped)
           if (serviceEnabled) {
-            stopServiceBtn.style.display = 'block';
             startServiceBtn.style.display = 'none';
           } else {
-            stopServiceBtn.style.display = 'none';
             startServiceBtn.style.display = 'block';
           }
         }
@@ -364,6 +373,34 @@
         }
       }
 
+      async function renewSubscription() {
+        const button = document.getElementById('renew-btn');
+        setButtonLoading(button, true);
+
+        try {
+          const response = await fetch('/api/subscriptions/renew', {
+            method: 'POST'
+          });
+
+          const result = await response.json();
+          setButtonLoading(button, false);
+          if (result.success) {
+            if (result.checkoutUrl) {
+              // Redirect to checkout for renewal payment
+              window.location.href = result.checkoutUrl;
+            } else {
+              showSuccess(result.message || 'Subscription renewed successfully');
+              loadSubscriptionStatus();
+            }
+          } else {
+            showError(result.error || 'Failed to renew subscription');
+          }
+        } catch (error) {
+          setButtonLoading(button, false);
+          showError('Network error. Please try again.');
+        }
+      }
+
       async function reactivateSubscription() {
         const button = document.getElementById('reactivate-btn');
         setButtonLoading(button, true);
@@ -380,33 +417,6 @@
             loadSubscriptionStatus();
           } else {
             showError(result.error || 'Failed to reactivate subscription');
-          }
-        } catch (error) {
-          setButtonLoading(button, false);
-          showError('Network error. Please try again.');
-        }
-      }
-
-      async function stopService() {
-        if (!confirm('Are you sure you want to stop the service? All activation codes will be disabled immediately.')) {
-          return;
-        }
-
-        const button = document.getElementById('stop-service-btn');
-        setButtonLoading(button, true);
-
-        try {
-          const response = await fetch('/api/subscriptions/stop-service', {
-            method: 'POST'
-          });
-
-          const result = await response.json();
-          setButtonLoading(button, false);
-          if (result.success) {
-            showSuccess(result.message || 'Service stopped successfully');
-            loadSubscriptionStatus();
-          } else {
-            showError(result.error || 'Failed to stop service');
           }
         } catch (error) {
           setButtonLoading(button, false);
@@ -438,54 +448,6 @@
             } else {
               showError(result.error || 'Failed to start service');
             }
-          }
-        } catch (error) {
-          setButtonLoading(button, false);
-          showError('Network error. Please try again.');
-        }
-      }
-
-      async function deleteSubscription() {
-        const button = document.getElementById('delete-subscription-btn');
-        
-        // Confirm deletion - this is a destructive action
-        const confirmed = confirm(
-          '⚠️ WARNING: This will permanently delete your subscription and ALL activation codes.\n\n' +
-          'This action cannot be undone. You will need to purchase a new subscription to continue using the service.\n\n' +
-          'Are you sure you want to delete your subscription?'
-        );
-        
-        if (!confirmed) {
-          return;
-        }
-
-        // Double confirmation
-        const doubleConfirmed = confirm(
-          'This is your last chance to cancel. Are you absolutely sure?'
-        );
-        
-        if (!doubleConfirmed) {
-          return;
-        }
-
-        setButtonLoading(button, true);
-
-        try {
-          const response = await fetch('/api/subscriptions/delete', {
-            method: 'DELETE'
-          });
-
-          const result = await response.json();
-          setButtonLoading(button, false);
-          
-          if (result.success) {
-            showSuccess(result.message || 'Subscription and all activation codes have been deleted.');
-            // Reload subscription status - should show no subscription
-            setTimeout(() => {
-              loadSubscriptionStatus();
-            }, 1000);
-          } else {
-            showError(result.error || 'Failed to delete subscription');
           }
         } catch (error) {
           setButtonLoading(button, false);

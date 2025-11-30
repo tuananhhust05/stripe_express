@@ -4,6 +4,7 @@ const morgan = require('morgan');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
+const session = require('express-session');
 const dotenv = require('dotenv');
 
 dotenv.config();
@@ -24,6 +25,25 @@ app.use(morgan('combined'));
 
 // Cookie parser for JWT tokens
 app.use(cookieParser());
+
+// Session configuration for Passport
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || process.env.API_SECRET || 'your-session-secret-change-in-production',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+  })
+);
+
+// Initialize Passport
+const passport = require('./config/passport');
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Stripe webhook needs the  raw  body , so register  before global body parsers
 app.use('/webhook/stripe', stripeWebhook);

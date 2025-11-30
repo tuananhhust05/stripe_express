@@ -3,7 +3,8 @@ const { createCheckoutSession } = require('../controllers/paymentController');
 const { validateActivation, getActivationStatus, verifyActivationCode, redeemActivationCode, verifyToken } = require('../controllers/activationController');
 const { getTransactions } = require('../controllers/transactionController');
 const { adminLogin, adminLogout } = require('../controllers/adminController');
-const { register, login, logout, getProfile } = require('../controllers/userController');
+const { register, login, logout, getProfile, googleCallback } = require('../controllers/userController');
+const passport = require('../config/passport');
 const apiAuth = require('../middleware/apiAuth');
 const { requireUser } = require('../middleware/userAuth');
 
@@ -23,13 +24,43 @@ router.post('/users/login', login);
 router.post('/users/logout', logout);
 router.get('/users/me', requireUser, getProfile);
 
+// Google OAuth routes
+router.get('/auth/google', (req, res, next) => {
+  // Save return URL from query string to session
+  if (req.query.redirect) {
+    req.session.returnTo = req.query.redirect;
+  }
+  passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+});
+router.get('/auth/google/callback', 
+  (req, res, next) => {
+    passport.authenticate('google', (err, user, info) => {
+      if (err) {
+        console.error('❌ Google OAuth authentication error:', err);
+        // Handle specific error cases
+        if (err.message && err.message.includes('already linked')) {
+          return res.redirect('/login?error=google_account_linked');
+        }
+        return res.redirect('/login?error=authentication_failed');
+      }
+      if (!user) {
+        return res.redirect('/login?error=authentication_failed');
+      }
+      req.user = user;
+      next();
+    })(req, res, next);
+  },
+  googleCallback
+);
+
 // Subscription management routes (protected)
-const { getSubscriptionStatus, createSubscriptionCheckout, changeSubscription, cancelSubscription, revokeSubscription, reactivateSubscription, stopService, startService, deleteSubscription } = require('../controllers/subscriptionController');
+const { getSubscriptionStatus, createSubscriptionCheckout, changeSubscription, cancelSubscription, revokeSubscription, renewSubscription, reactivateSubscription, stopService, startService, deleteSubscription } = require('../controllers/subscriptionController');
 router.get('/subscriptions/status', requireUser, getSubscriptionStatus);
 router.post('/subscriptions/checkout', requireUser, createSubscriptionCheckout);
 router.post('/subscriptions/change', requireUser, changeSubscription);
 router.post('/subscriptions/cancel', requireUser, cancelSubscription);
 router.post('/subscriptions/revoke', requireUser, revokeSubscription);
+router.post('/subscriptions/renew', requireUser, renewSubscription);
 router.post('/subscriptions/reactivate', requireUser, reactivateSubscription);
 router.post('/subscriptions/stop-service', requireUser, stopService);
 router.post('/subscriptions/start-service', requireUser, startService);

@@ -758,6 +758,159 @@ const revokeSubscription = async (req, res, next) => {
 };
 
 /**
+ * Renew subscription - Extend subscription period by creating a new payment
+ */
+const renewSubscription = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Check if user has a subscription
+    if (!user.subscriptionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'No active subscription to renew. Please create a new subscription.'
+      });
+    }
+
+    // Lifetime plans don't need renewal
+    if (user.subscriptionPlan === 'lifetime') {
+      return res.status(400).json({
+        success: false,
+        error: 'Lifetime subscriptions do not need renewal'
+      });
+    }
+
+    if (!stripe) {
+      return res.status(500).json({
+        success: false,
+        error: 'Stripe is not configured'
+      });
+    }
+
+    // Get current subscription from Stripe
+    let subscription;
+    try {
+      subscription = await stripe.subscriptions.retrieve(user.subscriptionId);
+    } catch (err) {
+      console.error('❌ Error retrieving subscription:', err);
+      return res.status(400).json({
+        success: false,
+        error: 'Subscription not found in Stripe'
+      });
+    }
+
+    // Check if subscription is already canceled
+    if (subscription.status === 'canceled') {
+      return res.status(400).json({
+        success: false,
+        error: 'Subscription is canceled. Please reactivate it first.'
+      });
+    }
+
+    // Get price ID from current subscription (most reliable way)
+    // This ensures we use the exact same price the user is already subscribed to
+    let priceId = null;
+    
+    if (subscription.items && subscription.items.data && subscription.items.data.length > 0) {
+      priceId = subscription.items.data[0].price.id;
+      console.log('✅ Using price ID from current subscription:', priceId);
+    }
+    
+    // Fallback: Try to get price from env or create it
+    if (!priceId) {
+      console.log('⚠️ No price ID in subscription, trying to get/create price...');
+      const { getPriceId } = require('../services/stripeService');
+      priceId = await getPriceId('monthly');
+      
+      if (!priceId) {
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to get price for monthly plan'
+        });
+      }
+    }
+
+    // Verify price exists and is active
+    try {
+      const price = await stripe.prices.retrieve(priceId);
+      if (!price.active) {
+        return res.status(500).json({
+          success: false,
+          error: 'Price is not active'
+        });
+      }
+      
+      // Ensure it's a recurring price for monthly subscription
+      if (price.type !== 'recurring' || !price.recurring || price.recurring.interval !== 'month') {
+        return res.status(500).json({
+          success: false,
+          error: 'Price is not a monthly recurring price'
+        });
+      }
+    } catch (priceError) {
+      console.error('❌ Error verifying price:', priceError.message);
+      return res.status(500).json({
+        success: false,
+        error: `Failed to verify price: ${priceError.message}`
+      });
+    }
+
+    // For renewal, we'll create a checkout session that allows user to pay
+    // and then we'll update the existing subscription to extend the period
+    // Alternatively, we can create an invoice item and invoice immediately
+    
+    // Option 1: Create checkout session (simpler, user confirms payment)
+    // This creates a new subscription, but we can handle it in webhook
+    // Option 2: Create invoice item and invoice immediately (more direct)
+    
+    // Using checkout session for now (safer, user confirms)
+    const sessionConfig = {
+      mode: 'subscription',
+      customer: user.stripeCustomerId,
+      payment_method_types: ['card'],
+      metadata: {
+        userId: user._id.toString(),
+        planId: 'monthly',
+        email: user.email,
+        action: 'renew',
+        existingSubscriptionId: user.subscriptionId // Track existing subscription
+      },
+      line_items: [{
+        price: priceId,
+        quantity: 1
+      }],
+      success_url: `${process.env.APP_BASE_URL || (req.protocol + '://' + req.get('host'))}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.APP_BASE_URL || (req.protocol + '://' + req.get('host'))}/subscription/cancel`
+    };
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
+
+    console.log('✅ Renewal checkout session created:', {
+      sessionId: session.id,
+      userId: user._id,
+      subscriptionId: user.subscriptionId
+    });
+
+    res.json({
+      success: true,
+      checkoutUrl: session.url,
+      sessionId: session.id,
+      message: 'Please complete payment to renew your subscription'
+    });
+  } catch (error) {
+    console.error('❌ Error renewing subscription:', error);
+    next(error);
+  }
+};
+
+/**
  * Reactivate canceled subscription
  */
 const reactivateSubscription = async (req, res, next) => {
@@ -1203,6 +1356,7 @@ module.exports = {
   changeSubscription,
   cancelSubscription,
   revokeSubscription,
+  renewSubscription,
   reactivateSubscription,
   stopService,
   startService,
