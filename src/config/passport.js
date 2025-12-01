@@ -8,7 +8,7 @@ const getCallbackURL = () => {
   if (process.env.GOOGLE_CALLBACK_URL) {
     return process.env.GOOGLE_CALLBACK_URL;
   }
-  const baseURL = process.env.APP_BASE_URL || 'https://vtoobe.shop';
+  const baseURL = process.env.APP_BASE_URL || 'http://localhost:3334';
   return `${baseURL}/api/auth/google/callback`;
 };
 

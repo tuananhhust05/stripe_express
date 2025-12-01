@@ -32,7 +32,7 @@ const sendActivationEmail = async ({ to, activationCode, planLabel, expiresAt, d
   }) : 'Never';
   
   // Default deep link if not provided
-  const deepLinkUrl = deepLink || 'https://vtoobe.shop/';
+  const deepLinkUrl = deepLink || 'http://localhost:3334/';
   
   // Load email template
   const templatePath = path.join(__dirname, '..', 'templates', 'activation-email.html');

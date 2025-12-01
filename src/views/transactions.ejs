@@ -38,19 +38,19 @@
                 <% transactions.forEach((txn) => { %>
                   <tr>
                     <td><%= new Date(txn.createdAt).toLocaleString() %></td>
-                    <td><%= txn.email || '—' %></td>
-                    <td><%= txn.plan || '—' %></td>
+                    <td><%= txn.email || 'N/A' %></td>
+                    <td><%= txn.plan || 'N/A' %></td>
                     <td>
                       <% if (txn.amountTotal && txn.currency) { %>
                         <%= (txn.amountTotal / 100).toFixed(2) %> <%= txn.currency.toUpperCase() %>
                       <% } else { %>
-                        —
+                        N/A
                       <% } %>
                     </td>
                     <td class="status-pill <%= txn.status %>">
                       <%= txn.status %>
                     </td>
-                    <td><%= txn.activationCode || '—' %></td>
+                    <td><%= txn.activationCode || 'N/A' %></td>
                     <td class="mono"><%= txn.stripeSessionId %></td>
                   </tr>
                 <% }) %>
