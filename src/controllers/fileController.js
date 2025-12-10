@@ -30,7 +30,7 @@ const uploadFile = async (req, res) => {
     }
 
     const fileInfo = {
-      filename: req.file.filename,
+      filename: req.file.filename, // This is now the original filename
       originalname: req.file.originalname,
       mimetype: req.file.mimetype,
       size: req.file.size,

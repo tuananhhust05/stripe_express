@@ -15,10 +15,21 @@ const storage = multer.diskStorage({
     cb(null, UPLOAD_DIR);
   },
   filename: (req, file, cb) => {
-    // Keep original filename, add timestamp to avoid conflicts
-    const timestamp = Date.now();
-    const originalName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
-    cb(null, `${timestamp}-${originalName}`);
+    // Keep original filename exactly as uploaded
+    const originalName = file.originalname;
+    const filePath = path.join(UPLOAD_DIR, originalName);
+    
+    // If file exists, delete it first (replace old file)
+    if (fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+        console.log('✅ Replaced existing file:', originalName);
+      } catch (error) {
+        console.error('⚠️ Error deleting existing file:', error);
+      }
+    }
+    
+    cb(null, originalName);
   }
 });
 
