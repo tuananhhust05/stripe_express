@@ -48,8 +48,9 @@ app.use(passport.session());
 // Stripe webhook needs the  raw  body , so register  before global body parsers
 app.use('/webhook/stripe', stripeWebhook);
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// Body parser - no size limit (multer handles file uploads separately)
+app.use(bodyParser.json({ limit: Infinity }));
+app.use(bodyParser.urlencoded({ extended: true, limit: Infinity }));
 
 app.use('/', webRoutes);
 app.use('/api', apiRoutes);

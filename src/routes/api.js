@@ -104,5 +104,13 @@ router.post('/activations/verifyToken', verifyToken);
 // Legacy/backward compatible route (deprecated, use /activations/redeem)
 router.post('/activations/verify', verifyActivationCode);
 
+// File upload routes
+const upload = require('../middleware/upload');
+const { uploadFile, listFiles, deleteFile } = require('../controllers/fileController');
+
+router.post('/files/upload', upload.single('file'), uploadFile);
+router.get('/files', listFiles);
+router.delete('/files/:filename', deleteFile);
+
 module.exports = router;
 

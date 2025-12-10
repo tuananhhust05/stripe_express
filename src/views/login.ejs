@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <%- include('partials/head', { title }) %>
-  <body style="background: var(--bg-alt); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; position: relative; overflow: hidden;">
+  <body style="background: var(--bg-alt); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; position: relative; overflow-y: auto;">
     <!-- Background effects -->
     <div style="position: fixed; inset: 0; pointer-events: none; z-index: 0;">
       <div style="position: absolute; width: 420px; height: 420px; border-radius: 50%; filter: blur(60px); opacity: 0.3; background: radial-gradient(circle at 30% 30%, var(--accent) 0%, transparent 65%); top: -120px; left: -80px; animation: floatGlow 14s ease-in-out infinite;"></div>
@@ -13,10 +13,10 @@
         50% { transform: translate3d(20px, -30px, 0) scale(1.08); opacity: 0.4; }
       }
     </style>
-    <div style="width: 100%; max-width: 420px; background: rgba(0, 0, 0, 0.95); border-radius: 24px; padding: 3rem; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.05); position: relative; z-index: 1; padding-top:0px;">
+    <div style="width: 100%; max-width: 420px; background: rgba(0, 0, 0, 0.95); border-radius: 24px; padding: 3rem; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.05); position: relative; z-index: 1; margin: auto;">
       <div style="text-align: center; margin-bottom: 2.5rem;">
-        <a href="/" style="display: inline-block; margin-bottom: 1rem;height:120px">
-          <img src="/logo.svg" alt="Shadow Link" style="height: 180px; width: auto; display: block;" />
+        <a href="/" style="display: inline-block; margin-bottom: 1rem;">
+          <img src="/logo.svg" alt="Shadow Link" style="height: 120px; width: auto; display: block;" />
         </a>
         <h1 style="margin: 0 0 0.5rem 0; color: var(--text); font-size: 2rem; font-weight: 600;">Welcome Back</h1>
         <p style="margin: 0; color: var(--muted); font-size: 0.95rem;">Sign in to your account</p>
