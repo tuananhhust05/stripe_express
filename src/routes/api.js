@@ -123,5 +123,12 @@ router.get('/files/mac', listMacFiles);
 // Delete a macOS installer by filename
 router.delete('/files/mac/:filename', deleteMacFile);
 
+// Generic upload to /public/upload
+const uploadGeneric = require('../middleware/uploadGeneric');
+const { uploadToUploadFolder } = require('../controllers/genericUploadController');
+
+// Upload any file to /public/upload
+router.post('/files/upload-folder', uploadGeneric.single('file'), uploadToUploadFolder);
+
 module.exports = router;
 
