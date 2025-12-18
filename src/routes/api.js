@@ -104,13 +104,24 @@ router.post('/activations/verifyToken', verifyToken);
 // Legacy/backward compatible route (deprecated, use /activations/redeem)
 router.post('/activations/verify', verifyActivationCode);
 
-// File upload routes
+// File upload routes (Windows installers)
 const upload = require('../middleware/upload');
 const { uploadFile, listFiles, deleteFile } = require('../controllers/fileController');
 
 router.post('/files/upload', upload.single('file'), uploadFile);
 router.get('/files', listFiles);
 router.delete('/files/:filename', deleteFile);
+
+// File upload routes (macOS installers)
+const uploadMac = require('../middleware/uploadMac');
+const { uploadMacFile, listMacFiles, deleteMacFile } = require('../controllers/macFileController');
+
+// Upload macOS installer to /public/app/mac
+router.post('/files/mac/upload', uploadMac.single('file'), uploadMacFile);
+// List macOS installers
+router.get('/files/mac', listMacFiles);
+// Delete a macOS installer by filename
+router.delete('/files/mac/:filename', deleteMacFile);
 
 module.exports = router;
 
