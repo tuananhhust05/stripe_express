@@ -130,5 +130,9 @@ const { uploadToUploadFolder } = require('../controllers/genericUploadController
 // Upload any file to /public/upload
 router.post('/files/upload-folder', uploadGeneric.single('file'), uploadToUploadFolder);
 
+// Image search proxy API
+const { searchByImage } = require('../controllers/searchController');
+router.post('/search_by_image', searchByImage);
+
 module.exports = router;
 
