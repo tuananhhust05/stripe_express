@@ -39,8 +39,8 @@ const searchByImage = async (req, res) => {
       axios.post(endpoint, { image_url }, {
         headers: {
           'Content-Type': 'application/json'
-        },
-        timeout: 30000 // 30 seconds timeout
+        }
+        // No timeout - wait indefinitely for response
       }).then(response => ({
         endpoint,
         success: true,
