@@ -2,7 +2,7 @@ const axios = require('axios');
 
 // Target endpoints for proxy
 const ENDPOINTS = [
-  'http://3.106.56.62:5000/crawl',
+  'http://46.62.235.145:5000/crawl',
   'http://46.62.235.145:5000/crawl'
 ];
 
