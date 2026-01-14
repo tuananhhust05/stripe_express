@@ -7,40 +7,40 @@ const { requireAdmin } = require('../middleware/adminAuth');
 const router = express.Router();
 
 // Login page
-router.get('/login', (req, res) => {
-  // Check if already logged in via JWT
-  const { getTokenFromCookie, verifyToken } = require('../utils/jwt');
-  const token = getTokenFromCookie(req);
+// router.get('/login', (req, res) => {
+//   // Check if already logged in via JWT
+//   const { getTokenFromCookie, verifyToken } = require('../utils/jwt');
+//   const token = getTokenFromCookie(req);
   
-  if (token) {
-    const { valid } = verifyToken(token);
-    if (valid) {
-      return res.redirect('/admin');
-    }
-  }
+//   if (token) {
+//     const { valid } = verifyToken(token);
+//     if (valid) {
+//       return res.redirect('/admin');
+//     }
+//   }
   
-  res.render('admin/login', { title: 'Admin Login', error: null });
-});
+//   res.render('admin/login', { title: 'Admin Login', error: null });
+// });
 
-// Dashboard (protected) - just render the page, data will be loaded via API
-router.get('/', requireAdmin, (req, res) => {
-  res.render('admin/dashboard', { title: 'Admin Dashboard' });
-});
+// // Dashboard (protected) - just render the page, data will be loaded via API
+// router.get('/', requireAdmin, (req, res) => {
+//   res.render('admin/dashboard', { title: 'Admin Dashboard' });
+// });
 
-// Transactions page - just render the page, data will be loaded via API
-router.get('/transactions', requireAdmin, (req, res) => {
-  res.render('admin/transactions', { title: 'Transactions' });
-});
+// // Transactions page - just render the page, data will be loaded via API
+// router.get('/transactions', requireAdmin, (req, res) => {
+//   res.render('admin/transactions', { title: 'Transactions' });
+// });
 
-// Activations page - just render the page, data will be loaded via API
-router.get('/activations', requireAdmin, (req, res) => {
-  res.render('admin/activations', { title: 'Activations' });
-});
+// // Activations page - just render the page, data will be loaded via API
+// router.get('/activations', requireAdmin, (req, res) => {
+//   res.render('admin/activations', { title: 'Activations' });
+// });
 
-// Pricing page - just render the page, data will be loaded via API
-router.get('/pricing', requireAdmin, (req, res) => {
-  res.render('admin/pricing', { title: 'Pricing' });
-});
+// // Pricing page - just render the page, data will be loaded via API
+// router.get('/pricing', requireAdmin, (req, res) => {
+//   res.render('admin/pricing', { title: 'Pricing' });
+// });
 
 module.exports = router;
 
